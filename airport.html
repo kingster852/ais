@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Map</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="airport.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>✈️ Pilot AIS</h1>
+            <nav>
+                <a href="index.html">Dashboard</a>
+                <a href="airport.html?icao=HKG" class="active">Airport Map</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="airport-container">
+            <div class="airport-header">
+                <h2 id="airportTitle">Loading...</h2>
+                <p id="airportSubtitle">-</p>
+            </div>
+
+            <div class="airport-content">
+                <div class="map-panel">
+                    <div id="map"></div>
+                </div>
+
+                <div class="info-panel">
+                    <h3>Airport Information</h3>
+                    <div class="data-row"><span>ICAO:</span> <span id="infoIcao">-</span></div>
+                    <div class="data-row"><span>IATA:</span> <span id="infoIata">-</span></div>
+                    <div class="data-row"><span>Elevation:</span> <span id="infoElev">-</span></div>
+                    <div class="data-row"><span>Coordinates:</span> <span id="infoCoords">-</span></div>
+                    
+                    <h3>Runways</h3>
+                    <div id="runwayInfo" class="runway-info">
+                        Loading...
+                    </div>
+
+                    <h3>Quick Links</h3>
+                    <a href="index.html" class="back-link">← Back to Dashboard</a>
+                    <div class="airport-selector">
+                        <label>View another airport:</label>
+                        <select id="airportSelect" onchange="changeAirport(this.value)">
+                            <option value="HKG">Hong Kong (HKG)</option>
+                            <option value="JFK">New York JFK (JFK)</option>
+                            <option value="LHR">London Heathrow (LHR)</option>
+                            <option value="DXB">Dubai (DXB)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="airport.js"></script>
+</body>
+</html>

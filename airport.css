@@ -1,9 +1,9 @@
-.hkia-container {
+.airport-container {
     max-width: 1200px;
     margin: 0 auto;
 }
 
-.hkia-header {
+.airport-header {
     background: var(--card-bg);
     padding: 20px;
     border-radius: 8px;
@@ -11,17 +11,17 @@
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-.hkia-header h2 {
+.airport-header h2 {
     margin: 0 0 5px 0;
     color: var(--primary);
 }
 
-.hkia-header p {
+.airport-header p {
     margin: 0;
     color: #666;
 }
 
-.hkia-content {
+.airport-content {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 20px;
@@ -97,8 +97,25 @@
     background: #004494;
 }
 
+.airport-selector {
+    margin-top: 15px;
+}
+
+.airport-selector label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.airport-selector select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
 @media (max-width: 768px) {
-    .hkia-content {
+    .airport-content {
         grid-template-columns: 1fr;
     }
     
