@@ -3,23 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aeronautical Info System</title>
+    <title>Pilot AIS Dashboard</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <header>
-        <h1>Aeronautical Info System</h1>
-        <p>Search airports, NOTAMs, and weather data</p>
+        <div class="header-content">
+            <h1>✈️ Pilot AIS</h1>
+            <nav>
+                <a href="#" class="active">Dashboard</a>
+                <a href="#">Flight Plan</a>
+                <a href="#">Logbook</a>
+            </nav>
+        </div>
     </header>
 
     <main>
-        <div class="search-container">
-            <input type="text" id="searchInput" placeholder="Enter ICAO code (e.g., JFK, LHR) or Airport Name...">
-            <button onclick="searchAirport()">Search</button>
-        </div>
+        <div class="dashboard-grid">
+            <!-- Left: Search & Quick Actions -->
+            <div class="panel search-panel">
+                <h2>Airport Lookup</h2>
+                <input type="text" id="searchInput" placeholder="ICAO (e.g. JFK) or City...">
+                <button onclick="searchAirport()">Search</button>
+                
+                <div class="quick-links">
+                    <h3>Quick Access</h3>
+                    <button onclick="loadAirport('JFK')">JFK</button>
+                    <button onclick="loadAirport('LHR')">LHR</button>
+                    <button onclick="loadAirport('DXB')">DXB</button>
+                </div>
+            </div>
 
-        <div id="results" class="results-container">
-            <div class="placeholder-text">Enter a search term to find airport information.</div>
+            <!-- Right: Information Display -->
+            <div class="panel info-panel" id="infoPanel">
+                <div class="airport-header">
+                    <h2 id="airportName">Select an Airport</h2>
+                    <span id="airportCode" class="badge">---</span>
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('info')">Info</button>
+                    <button class="tab-btn" onclick="switchTab('weather')">Weather</button>
+                    <button class="tab-btn" onclick="switchTab('notams')">NOTAMs</button>
+                </div>
+
+                <div class="tab-content" id="tabInfo">
+                    <div class="data-row"><span>City:</span> <span id="city">-</span></div>
+                    <div class="data-row"><span>Country:</span> <span id="country">-</span></div>
+                    <div class="data-row"><span>Coordinates:</span> <span id="coords">-</span></div>
+                    <div class="data-row"><span>Elevation:</span> <span id="elevation">-</span></div>
+                    <div class="data-row"><span>Runways:</span> <span id="runways">-</span></div>
+                </div>
+
+                <div class="tab-content hidden" id="tabWeather">
+                    <pre id="metarData">No data available.</pre>
+                </div>
+
+                <div class="tab-content hidden" id="tabNotams">
+                    <ul id="notamsList">
+                        <li>No active NOTAMs.</li>
+                    </ul>
+                </div>
+            </div>
         </div>
     </main>
 

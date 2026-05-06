@@ -1,97 +1,137 @@
+:root {
+    --primary: #0056b3;
+    --dark: #1a1a1a;
+    --light: #f4f7f6;
+    --card-bg: #ffffff;
+    --text: #333;
+}
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f6;
+    background-color: var(--light);
     margin: 0;
-    padding: 0;
-    color: #333;
+    color: var(--text);
 }
 
 header {
-    background-color: #0056b3;
+    background-color: var(--dark);
     color: white;
-    padding: 20px;
-    text-align: center;
+    padding: 15px 20px;
 }
 
-header h1 {
-    margin: 0;
-    font-size: 2.5rem;
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
-header p {
-    margin: 5px 0 0;
-    opacity: 0.8;
+header h1 { margin: 0; font-size: 1.5rem; }
+
+nav a {
+    color: #ccc;
+    text-decoration: none;
+    margin-left: 20px;
+    font-weight: 500;
 }
+
+nav a.active { color: white; border-bottom: 2px solid var(--primary); }
 
 main {
-    max-width: 800px;
-    margin: 40px auto;
+    max-width: 1200px;
+    margin: 20px auto;
     padding: 0 20px;
 }
 
-.search-container {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
 }
 
-input {
-    flex: 1;
-    padding: 15px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+.panel {
+    background: var(--card-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
-button {
-    padding: 15px 30px;
-    font-size: 16px;
-    background-color: #0056b3;
+.search-panel input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.search-panel button {
+    width: 100%;
+    padding: 10px;
+    background: var(--primary);
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
 }
 
-button:hover {
-    background-color: #004494;
+.quick-links { margin-top: 20px; }
+.quick-links button {
+    margin: 5px;
+    padding: 5px 10px;
+    background: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    cursor: pointer;
 }
 
-.results-container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    min-height: 200px;
+.airport-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
 }
 
-.placeholder-text {
-    color: #888;
-    text-align: center;
-    margin-top: 50px;
-}
-
-.airport-card {
-    border-bottom: 1px solid #eee;
-    padding: 15px 0;
-}
-
-.airport-card:last-child {
-    border-bottom: none;
-}
-
-.airport-code {
+.badge {
+    background: var(--primary);
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
     font-weight: bold;
-    color: #0056b3;
-    font-size: 1.2rem;
 }
 
-.airport-name {
-    font-size: 1.1rem;
-    margin: 5px 0;
+.tabs { display: flex; gap: 10px; margin-bottom: 15px; }
+.tab-btn {
+    padding: 8px 15px;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.tab-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+.data-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
 }
 
-.airport-details {
-    color: #666;
-    font-size: 0.9rem;
+.data-row span:first-child { font-weight: bold; color: #555; }
+
+.hidden { display: none; }
+
+pre {
+    background: #222;
+    color: #0f0;
+    padding: 15px;
+    border-radius: 5px;
+    font-family: monospace;
+    overflow-x: auto;
 }
+
+ul { padding-left: 20px; }
+li { margin-bottom: 5px; }
