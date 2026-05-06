@@ -114,6 +114,32 @@
     border-radius: 4px;
 }
 
+.legend {
+    margin-top: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+.legend-color {
+    display: inline-block;
+    width: 20px;
+    height: 4px;
+    margin-right: 8px;
+    border-radius: 2px;
+}
+
+.runway-color { background: #2c2c2c; height: 8px; }
+.taxiway-color { background: #d4a017; }
+.rapid-color { background: #d4a017; border-top: 2px dashed #d4a017; height: 0; }
+
 @media (max-width: 768px) {
     .airport-content {
         grid-template-columns: 1fr;
