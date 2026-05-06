@@ -86,6 +86,21 @@ main {
     cursor: pointer;
 }
 
+.special-link {
+    display: inline-block;
+    margin: 5px;
+    padding: 5px 10px;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #0056b3;
+    font-weight: 500;
+}
+.special-link:hover {
+    background: #bbdefb;
+}
+
 .airport-header {
     display: flex;
     justify-content: space-between;

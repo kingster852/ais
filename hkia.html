@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HKIA Airport Map</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="hkia.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <h1>✈️ Pilot AIS</h1>
+            <nav>
+                <a href="index.html">Dashboard</a>
+                <a href="hkia.html" class="active">HKIA Map</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <div class="hkia-container">
+            <div class="hkia-header">
+                <h2>Hong Kong International Airport (VHHH / HKG)</h2>
+                <p>Chek Lap Kok, Hong Kong</p>
+            </div>
+
+            <div class="hkia-content">
+                <div class="map-panel">
+                    <div id="map"></div>
+                </div>
+
+                <div class="info-panel">
+                    <h3>Airport Information</h3>
+                    <div class="data-row"><span>ICAO:</span> <span>VHHH</span></div>
+                    <div class="data-row"><span>IATA:</span> <span>HKG</span></div>
+                    <div class="data-row"><span>Elevation:</span> <span>28 ft</span></div>
+                    <div class="data-row"><span>Coordinates:</span> <span>22.3080°N, 113.9185°E</span></div>
+                    
+                    <h3>Runways</h3>
+                    <div class="runway-info">
+                        <div class="runway">
+                            <span class="runway-name">07L / 25R</span>
+                            <span class="runway-length">3,800 m</span>
+                        </div>
+                        <div class="runway">
+                            <span class="runway-name">07R / 25L</span>
+                            <span class="runway-length">3,800 m</span>
+                        </div>
+                    </div>
+
+                    <h3>Quick Links</h3>
+                    <a href="index.html" class="back-link">← Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="hkia.js"></script>
+</body>
+</html>
