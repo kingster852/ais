@@ -1,0 +1,97 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+header {
+    background-color: #0056b3;
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+}
+
+header p {
+    margin: 5px 0 0;
+    opacity: 0.8;
+}
+
+main {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+.search-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+input {
+    flex: 1;
+    padding: 15px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    padding: 15px 30px;
+    font-size: 16px;
+    background-color: #0056b3;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #004494;
+}
+
+.results-container {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    min-height: 200px;
+}
+
+.placeholder-text {
+    color: #888;
+    text-align: center;
+    margin-top: 50px;
+}
+
+.airport-card {
+    border-bottom: 1px solid #eee;
+    padding: 15px 0;
+}
+
+.airport-card:last-child {
+    border-bottom: none;
+}
+
+.airport-code {
+    font-weight: bold;
+    color: #0056b3;
+    font-size: 1.2rem;
+}
+
+.airport-name {
+    font-size: 1.1rem;
+    margin: 5px 0;
+}
+
+.airport-details {
+    color: #666;
+    font-size: 0.9rem;
+}

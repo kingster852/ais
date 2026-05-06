@@ -3,10 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Test Page</title>
+    <title>Aeronautical Info System</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Hello, GitHub!</h1>
-    <p>This is a test HTML file.</p>
+    <header>
+        <h1>Aeronautical Info System</h1>
+        <p>Search airports, NOTAMs, and weather data</p>
+    </header>
+
+    <main>
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Enter ICAO code (e.g., JFK, LHR) or Airport Name...">
+            <button onclick="searchAirport()">Search</button>
+        </div>
+
+        <div id="results" class="results-container">
+            <div class="placeholder-text">Enter a search term to find airport information.</div>
+        </div>
+    </main>
+
+    <script src="script.js"></script>
 </body>
 </html>
