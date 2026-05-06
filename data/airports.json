@@ -1,0 +1,35 @@
+{
+  "JFK": {
+    "icao": "JFK", "iata": "JFK", "name": "John F Kennedy International", "city": "New York", "country": "USA",
+    "lat": 40.6413, "lon": -73.7781, "elev": "13 ft", "runways": "4 (04L/22R, 04R/22L, 13L/31R, 13R/31L)",
+    "metar": "METAR KJFK 121551Z 28012KT 10SM FEW050 SCT250 22/14 A3005 RMK AO2 SLP176",
+    "notams": [
+      "RWY 04R/22L CLOSED FOR MAINTENANCE UNTIL 1200Z",
+      "TWY A BETWEEN A1 AND A2 CLOSED"
+    ]
+  },
+  "LHR": {
+    "icao": "EGLL", "iata": "LHR", "name": "London Heathrow", "city": "London", "country": "UK",
+    "lat": 51.4700, "lon": -0.4543, "elev": "83 ft", "runways": "2 (09L/27R, 09R/27L)",
+    "metar": "METAR EGLL 121520Z 24015KT 9999 SCT035 18/10 Q1015 NOSIG",
+    "notams": [
+      "RADAR SERVICE LIMITED DUE TO MAINTENANCE",
+      "BIRD ACTIVITY REPORTED IN VICINITY OF AIRPORT"
+    ]
+  },
+  "DXB": {
+    "icao": "OMDB", "iata": "DXB", "name": "Dubai International", "city": "Dubai", "country": "UAE",
+    "lat": 25.2532, "lon": 55.3657, "elev": "62 ft", "runways": "2 (12L/30R, 12R/30L)",
+    "metar": "METAR OMDB 121600Z 32008KT CAVOK 38/18 Q1008 NOSIG",
+    "notams": []
+  },
+  "HKG": {
+    "icao": "VHHH", "iata": "HKG", "name": "Hong Kong International", "city": "Hong Kong", "country": "SAR",
+    "lat": 22.3080, "lon": 113.9185, "elev": "28 ft", "runways": "2 (07L/25R, 07R/25L)",
+    "metar": "METAR VHHH 121600Z 18008KT 9999 FEW020 SCT040 30/26 Q1010 NOSIG",
+    "notams": [
+      "RWY 07R/25L RESURFACING IN PROGRESS",
+      "APRON 5 CLOSED FOR EXPANSION WORKS"
+    ]
+  }
+}
