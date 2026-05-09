@@ -47,10 +47,10 @@ function loadAirportMap(icao) {
     document.getElementById('airportSelect').value = icao;
 
     if (map) {
-        map.setView([data.lat, data.lon], 11);
+        map.setView([data.lat, data.lon], 12);
         clearLayers();
     } else {
-        map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 11);
+        map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 12);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -203,7 +203,7 @@ function renderOSMData(osmData) {
 
     // Zoom to fit (no animation so zoom is set immediately)
     if (allCoords.length > 0) {
-        map.fitBounds(allCoords, { padding: [50, 50], animate: false, duration: 0 });
+        map.fitBounds(allCoords, { padding: [10, 10], animate: false, duration: 0 });
     }
 
     // Enforce label visibility by zoom — remove everything that shouldn't be shown
