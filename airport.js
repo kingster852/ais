@@ -114,14 +114,15 @@ function renderOSMData(osmData) {
     });
 
     // Create layer groups — major/minor taxiway labels for zoom LOD
+    // NOTE: label layers are NOT added to map initially — updateLabelsByZoom controls them
     layerGroups = {
         runway: L.layerGroup().addTo(map),
         taxiway: L.layerGroup().addTo(map),
         apron: L.layerGroup().addTo(map),
         terminal: L.layerGroup().addTo(map),
-        label_taxiway_major: L.layerGroup().addTo(map),
-        label_taxiway_minor: L.layerGroup().addTo(map),
-        label_runway: L.layerGroup().addTo(map)
+        label_taxiway_major: L.layerGroup(),
+        label_taxiway_minor: L.layerGroup(),
+        label_runway: L.layerGroup()
     };
 
     const styles = {
@@ -200,21 +201,17 @@ function renderOSMData(osmData) {
         }
     });
 
-    // Zoom to fit
-    const allCoords = [];
-    elements.forEach(el => {
-        if (el.type === 'way') {
-            const coords = el.nodes.map(id => nodes[id]).filter(c => c);
-            allCoords.push(...coords);
-        }
-    });
+    // Zoom to fit, then apply zoom-based label visibility after animation
     if (allCoords.length > 0) {
         map.fitBounds(allCoords, { padding: [50, 50] });
+        map.once('moveend', function() {
+            updateLabelsByZoom();
+            map.on('zoomend', updateLabelsByZoom);
+        });
+    } else {
+        updateLabelsByZoom();
+        map.on('zoomend', updateLabelsByZoom);
     }
-
-    // Apply zoom-based label visibility
-    map.on('zoomend', updateLabelsByZoom);
-    updateLabelsByZoom();
 
     // Add initial label toggle checkbox for the unified group
     const toggleHtml = `
@@ -237,42 +234,29 @@ function renderOSMData(osmData) {
 
 function updateLabelsByZoom() {
     const zoom = map.getZoom();
-    // zoom < 14: runway labels only
-    // zoom >= 14: add major taxiway labels
-    // zoom >= 15: add all taxiway labels
-    const showMajor = zoom >= 14;
-    const showMinor = zoom >= 15;
+    const labelsEnabled = document.querySelector('[data-layer="taxiway_labels"]')?.checked !== false;
 
-    if (layerGroups.label_taxiway_major) {
-        if (showMajor && !map.hasLayer(layerGroups.label_taxiway_major)) {
-            map.addLayer(layerGroups.label_taxiway_major);
-        } else if (!showMajor && map.hasLayer(layerGroups.label_taxiway_major)) {
-            map.removeLayer(layerGroups.label_taxiway_major);
-        }
-    }
+    const showRunwayLabel = zoom >= 13;
+    const showMajor = labelsEnabled && zoom >= 14;
+    const showMinor = labelsEnabled && zoom >= 15;
 
-    if (layerGroups.label_taxiway_minor) {
-        if (showMinor && !map.hasLayer(layerGroups.label_taxiway_minor)) {
-            map.addLayer(layerGroups.label_taxiway_minor);
-        } else if (!showMinor && map.hasLayer(layerGroups.label_taxiway_minor)) {
-            map.removeLayer(layerGroups.label_taxiway_minor);
-        }
+    toggleLabelGroup('label_runway', showRunwayLabel);
+    toggleLabelGroup('label_taxiway_major', showMajor);
+    toggleLabelGroup('label_taxiway_minor', showMinor);
+}
+
+function toggleLabelGroup(name, visible) {
+    const group = layerGroups[name];
+    if (!group) return;
+    if (visible && !map.hasLayer(group)) {
+        map.addLayer(group);
+    } else if (!visible && map.hasLayer(group)) {
+        map.removeLayer(group);
     }
 }
 
 function toggleLabelsByZoom() {
-    const checkbox = document.querySelector('[data-layer="taxiway_labels"]');
-    if (!checkbox) return;
-    if (checkbox.checked) {
-        updateLabelsByZoom();
-    } else {
-        if (layerGroups.label_taxiway_major && map.hasLayer(layerGroups.label_taxiway_major)) {
-            map.removeLayer(layerGroups.label_taxiway_major);
-        }
-        if (layerGroups.label_taxiway_minor && map.hasLayer(layerGroups.label_taxiway_minor)) {
-            map.removeLayer(layerGroups.label_taxiway_minor);
-        }
-    }
+    updateLabelsByZoom();
 }
 
 function toggleLayer(layerName) {
