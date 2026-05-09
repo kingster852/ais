@@ -113,13 +113,14 @@ function renderOSMData(osmData) {
         if (el.type === 'node') nodes[el.id] = [el.lat, el.lon];
     });
 
-    // Create layer groups
+    // Create layer groups — major/minor taxiway labels for zoom LOD
     layerGroups = {
         runway: L.layerGroup().addTo(map),
         taxiway: L.layerGroup().addTo(map),
         apron: L.layerGroup().addTo(map),
         terminal: L.layerGroup().addTo(map),
-        label_taxiway: L.layerGroup().addTo(map),
+        label_taxiway_major: L.layerGroup().addTo(map),
+        label_taxiway_minor: L.layerGroup().addTo(map),
         label_runway: L.layerGroup().addTo(map)
     };
 
@@ -153,15 +154,27 @@ function renderOSMData(osmData) {
             const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
             line.bindPopup(`Taxiway ${ref}`);
 
+            // Calculate approximate length
+            const latlngs = coords.map(c => L.latLng(c[0], c[1]));
+            let length = 0;
+            for (let i = 1; i < latlngs.length; i++) {
+                length += latlngs[i-1].distanceTo(latlngs[i]);
+            }
+
             const midIdx = Math.floor(coords.length / 2);
             const mid = coords[midIdx];
             if (mid) {
-                L.marker(mid, {
+                const label = L.marker(mid, {
                     icon: L.divIcon({
                         html: `<span style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-weight:bold;font-size:11px;">${ref}</span>`,
                         iconSize: [24, 18], className: ''
                     })
-                }).addTo(layerGroups.label_taxiway);
+                });
+                if (length > 400) {
+                    label.addTo(layerGroups.label_taxiway_major);
+                } else {
+                    label.addTo(layerGroups.label_taxiway_minor);
+                }
             }
         } else if (aeroway === 'runway') {
             const line = L.polyline(coords, style).addTo(layerGroups.runway);
@@ -199,7 +212,67 @@ function renderOSMData(osmData) {
         map.fitBounds(allCoords, { padding: [50, 50] });
     }
 
+    // Apply zoom-based label visibility
+    map.on('zoomend', updateLabelsByZoom);
+    updateLabelsByZoom();
+
+    // Add initial label toggle checkbox for the unified group
+    const toggleHtml = `
+        <label class="layer-toggle">
+            <input type="checkbox" data-layer="taxiway_labels" checked onchange="toggleLabelsByZoom()">
+            <span class="dot label-dot"></span> Taxiway Labels
+        </label>`;
+    // Remove old label toggle if exists and insert new one
+    const oldToggle = document.querySelector('[data-layer="label_taxiway"]');
+    if (oldToggle) {
+        oldToggle.closest('.layer-toggle').remove();
+    }
+    const container = document.querySelector('.layer-controls');
+    if (container && !document.querySelector('[data-layer="taxiway_labels"]')) {
+        container.insertAdjacentHTML('beforeend', toggleHtml);
+    }
+
     updateLayerCounts();
+}
+
+function updateLabelsByZoom() {
+    const zoom = map.getZoom();
+    // zoom < 14: runway labels only
+    // zoom >= 14: add major taxiway labels
+    // zoom >= 15: add all taxiway labels
+    const showMajor = zoom >= 14;
+    const showMinor = zoom >= 15;
+
+    if (layerGroups.label_taxiway_major) {
+        if (showMajor && !map.hasLayer(layerGroups.label_taxiway_major)) {
+            map.addLayer(layerGroups.label_taxiway_major);
+        } else if (!showMajor && map.hasLayer(layerGroups.label_taxiway_major)) {
+            map.removeLayer(layerGroups.label_taxiway_major);
+        }
+    }
+
+    if (layerGroups.label_taxiway_minor) {
+        if (showMinor && !map.hasLayer(layerGroups.label_taxiway_minor)) {
+            map.addLayer(layerGroups.label_taxiway_minor);
+        } else if (!showMinor && map.hasLayer(layerGroups.label_taxiway_minor)) {
+            map.removeLayer(layerGroups.label_taxiway_minor);
+        }
+    }
+}
+
+function toggleLabelsByZoom() {
+    const checkbox = document.querySelector('[data-layer="taxiway_labels"]');
+    if (!checkbox) return;
+    if (checkbox.checked) {
+        updateLabelsByZoom();
+    } else {
+        if (layerGroups.label_taxiway_major && map.hasLayer(layerGroups.label_taxiway_major)) {
+            map.removeLayer(layerGroups.label_taxiway_major);
+        }
+        if (layerGroups.label_taxiway_minor && map.hasLayer(layerGroups.label_taxiway_minor)) {
+            map.removeLayer(layerGroups.label_taxiway_minor);
+        }
+    }
 }
 
 function toggleLayer(layerName) {
