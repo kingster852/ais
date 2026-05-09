@@ -203,7 +203,7 @@ function renderOSMData(osmData) {
 
     // Zoom to fit (no animation so zoom is set immediately)
     if (allCoords.length > 0) {
-        map.fitBounds(allCoords, { padding: [10, 10], animate: false, duration: 0 });
+        map.fitBounds(allCoords, { padding: [30, 30], animate: false, duration: 0 });
     }
 
     // Enforce label visibility by zoom — remove everything that shouldn't be shown
