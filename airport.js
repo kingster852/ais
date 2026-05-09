@@ -87,161 +87,196 @@ function clearMarkers() {
     currentMarkers = [];
 }
 
-// Draw HKIA runways (approximate real positions)
+// Draw HKIA runways and taxiways with georeferenced coordinates
 function drawHKIARunways(data) {
-    const baseLat = data.lat;
-    const baseLon = data.lon;
-
-    // Runway 07L/25R (Northern runway)
-    const rw07L25R = L.polyline([
-        [baseLat + 0.0030, baseLon - 0.0150],
-        [baseLat - 0.0020, baseLon + 0.0160]
+    // Accurate HKIA runway thresholds
+    // RWY 07L/25R: Northern runway
+    const rwy07L25R = L.polyline([
+        [22.3136, 113.9050],
+        [22.3041, 113.9340]
     ], { color: '#2c2c2c', weight: 8 }).addTo(map);
-    rw07L25R.bindPopup('Runway 07L/25R<br>3,800m × 60m');
-    currentMarkers.push(rw07L25R);
+    rwy07L25R.bindPopup('Runway 07L/25R<br>3,800m × 60m');
+    currentMarkers.push(rwy07L25R);
 
-    // Runway 07R/25L (Southern runway)
-    const rw07R25L = L.polyline([
-        [baseLat - 0.0005, baseLon - 0.0145],
-        [baseLat - 0.0055, baseLon + 0.0165]
+    // RWY 07R/25L: Southern runway
+    const rwy07R25L = L.polyline([
+        [22.3085, 113.9056],
+        [22.2990, 113.9346]
     ], { color: '#2c2c2c', weight: 8 }).addTo(map);
-    rw07R25L.bindPopup('Runway 07R/25L<br>3,800m × 60m');
-    currentMarkers.push(rw07R25L);
+    rwy07R25L.bindPopup('Runway 07R/25L<br>3,800m × 60m');
+    currentMarkers.push(rwy07R25L);
 
     // Runway labels
-    L.marker([baseLat + 0.0035, baseLon - 0.0155], {
+    L.marker([22.3143, 113.9046], {
         icon: L.divIcon({ html: '<span style="font-weight:bold;color:#fff;text-shadow:1px 1px 2px #000;">07L</span>', iconSize: [40, 20], className: '' })
     }).addTo(map);
-    L.marker([baseLat - 0.0025, baseLon + 0.0165], {
+    L.marker([22.3034, 113.9344], {
         icon: L.divIcon({ html: '<span style="font-weight:bold;color:#fff;text-shadow:1px 1px 2px #000;">25R</span>', iconSize: [40, 20], className: '' })
     }).addTo(map);
-    L.marker([baseLat + 0.0000, baseLon - 0.0150], {
+    L.marker([22.3092, 113.9052], {
         icon: L.divIcon({ html: '<span style="font-weight:bold;color:#fff;text-shadow:1px 1px 2px #000;">07R</span>', iconSize: [40, 20], className: '' })
     }).addTo(map);
-    L.marker([baseLat - 0.0060, baseLon + 0.0170], {
+    L.marker([22.2983, 113.9350], {
         icon: L.divIcon({ html: '<span style="font-weight:bold;color:#fff;text-shadow:1px 1px 2px #000;">25L</span>', iconSize: [40, 20], className: '' })
     }).addTo(map);
 }
 
-// Draw HKIA taxiways (approximate real layout)
+// Draw HKIA taxiways aligned with runway geometry
 function drawHKIATaxiways(data) {
-    const baseLat = data.lat;
-    const baseLon = data.lon;
-
-    // Taxiway style
     const taxiStyle = { color: '#d4a017', weight: 3, opacity: 0.8 };
-    const taxiLabelStyle = { color: '#fff', fontWeight: 'bold', fontSize: '11px', textShadow: '1px 1px 2px #000' };
+    const rapidStyle = { ...taxiStyle, dashArray: '8,6' };
 
-    // Taxiway A - Parallel to 07L/25R (north side)
+    // === PARALLEL TAXIWAYS (aligned with runways) ===
+
+    // Taxiway A - ~180m north of RWY 07L/25R
     const twA = L.polyline([
-        [baseLat + 0.0050, baseLon - 0.0140],
-        [baseLat + 0.0050, baseLon + 0.0150]
+        [22.3152, 113.9055],
+        [22.3057, 113.9345]
     ], taxiStyle).addTo(map);
     twA.bindPopup('Taxiway A - Parallel to RWY 07L/25R');
     currentMarkers.push(twA);
 
-    // Taxiway B - Parallel to 07R/25L (south side)
+    // Taxiway B - ~150m south of RWY 07R/25L
     const twB = L.polyline([
-        [baseLat - 0.0025, baseLon - 0.0140],
-        [baseLat - 0.0025, baseLon + 0.0150]
+        [22.3067, 113.9050],
+        [22.2972, 113.9340]
     ], taxiStyle).addTo(map);
     twB.bindPopup('Taxiway B - Parallel to RWY 07R/25L');
     currentMarkers.push(twB);
 
-    // Taxiway C - Connector between runways
+    // Taxiway C - Between runways (midfield)
     const twC = L.polyline([
-        [baseLat + 0.0050, baseLon - 0.0050],
-        [baseLat - 0.0025, baseLon - 0.0050]
+        [22.3108, 113.9140],
+        [22.3060, 113.9140]
     ], taxiStyle).addTo(map);
-    twC.bindPopup('Taxiway C - Connector');
+    twC.bindPopup('Taxiway C - Midfield Connector');
     currentMarkers.push(twC);
 
-    // Taxiway D - Connector between runways (middle)
+    // Taxiway D - Between runways (center)
     const twD = L.polyline([
-        [baseLat + 0.0050, baseLon + 0.0020],
-        [baseLat - 0.0025, baseLon + 0.0020]
+        [22.3108, 113.9185],
+        [22.3060, 113.9185]
     ], taxiStyle).addTo(map);
-    twD.bindPopup('Taxiway D - Connector');
+    twD.bindPopup('Taxiway D - Center Connector');
     currentMarkers.push(twD);
 
-    // Taxiway E - Connector between runways (east)
+    // Taxiway E - Between runways (east)
     const twE = L.polyline([
-        [baseLat + 0.0050, baseLon + 0.0090],
-        [baseLat - 0.0025, baseLon + 0.0090]
+        [22.3108, 113.9230],
+        [22.3060, 113.9230]
     ], taxiStyle).addTo(map);
-    twE.bindPopup('Taxiway E - Connector');
+    twE.bindPopup('Taxiway E - East Connector');
     currentMarkers.push(twE);
 
-    // Taxiway F - Terminal access (north of 07L/25R)
+    // === TERMINAL APRON TAXIWAYS ===
+
+    // Taxiway F - Terminal frontage (west)
     const twF = L.polyline([
-        [baseLat + 0.0050, baseLon - 0.0020],
-        [baseLat + 0.0080, baseLon - 0.0020]
+        [22.3152, 113.9125],
+        [22.3170, 113.9125]
     ], taxiStyle).addTo(map);
-    twF.bindPopup('Taxiway F - Terminal Access');
+    twF.bindPopup('Taxiway F - Terminal West');
     currentMarkers.push(twF);
 
-    // Taxiway G - Terminal access (middle)
+    // Taxiway G - Terminal frontage (center)
     const twG = L.polyline([
-        [baseLat + 0.0050, baseLon + 0.0050],
-        [baseLat + 0.0080, baseLon + 0.0050]
+        [22.3152, 113.9185],
+        [22.3170, 113.9185]
     ], taxiStyle).addTo(map);
-    twG.bindPopup('Taxiway G - Terminal Access');
+    twG.bindPopup('Taxiway G - Terminal Center');
     currentMarkers.push(twG);
 
-    // Taxiway H - Terminal access (east)
+    // Taxiway H - Terminal frontage (east)
     const twH = L.polyline([
-        [baseLat + 0.0050, baseLon + 0.0120],
-        [baseLat + 0.0080, baseLon + 0.0120]
+        [22.3152, 113.9250],
+        [22.3170, 113.9250]
     ], taxiStyle).addTo(map);
-    twH.bindPopup('Taxiway H - Terminal Access');
+    twH.bindPopup('Taxiway H - Terminal East');
     currentMarkers.push(twH);
 
-    // Taxiway J - Rapid exit taxiway from 07L
+    // === RAPID EXIT TAXIWAYS ===
+
+    // Taxiway J - Rapid exit RWY 07L (west side)
     const twJ = L.polyline([
-        [baseLat + 0.0010, baseLon - 0.0080],
-        [baseLat + 0.0050, baseLon - 0.0080]
-    ], { ...taxiStyle, dashArray: '5,5' }).addTo(map);
-    twJ.bindPopup('Taxiway J - Rapid Exit from RWY 07L');
+        [22.3115, 113.9105],
+        [22.3152, 113.9105]
+    ], rapidStyle).addTo(map);
+    twJ.bindPopup('Taxiway J - Rapid Exit RWY 07L');
     currentMarkers.push(twJ);
 
-    // Taxiway K - Rapid exit taxiway from 07R
+    // Taxiway K - Rapid exit RWY 07R (west side)
     const twK = L.polyline([
-        [baseLat - 0.0020, baseLon - 0.0080],
-        [baseLat - 0.0025, baseLon - 0.0080]
-    ], { ...taxiStyle, dashArray: '5,5' }).addTo(map);
-    twK.bindPopup('Taxiway K - Rapid Exit from RWY 07R');
+        [22.3070, 113.9105],
+        [22.3067, 113.9105]
+    ], rapidStyle).addTo(map);
+    twK.bindPopup('Taxiway K - Rapid Exit RWY 07R');
     currentMarkers.push(twK);
 
-    // Taxiway L - Rapid exit taxiway from 25R
+    // Taxiway L - Rapid exit RWY 25R (east side)
     const twL = L.polyline([
-        [baseLat + 0.0010, baseLon + 0.0080],
-        [baseLat + 0.0050, baseLon + 0.0080]
-    ], { ...taxiStyle, dashArray: '5,5' }).addTo(map);
-    twL.bindPopup('Taxiway L - Rapid Exit from RWY 25R');
+        [22.3065, 113.9275],
+        [22.3057, 113.9275]
+    ], rapidStyle).addTo(map);
+    twL.bindPopup('Taxiway L - Rapid Exit RWY 25R');
     currentMarkers.push(twL);
 
-    // Taxiway M - Rapid exit taxiway from 25L
+    // Taxiway M - Rapid exit RWY 25L (east side)
     const twM = L.polyline([
-        [baseLat - 0.0020, baseLon + 0.0080],
-        [baseLat - 0.0025, baseLon + 0.0080]
-    ], { ...taxiStyle, dashArray: '5,5' }).addTo(map);
-    twM.bindPopup('Taxiway M - Rapid Exit from RWY 25L');
+        [22.3015, 113.9275],
+        [22.2972, 113.9275]
+    ], rapidStyle).addTo(map);
+    twM.bindPopup('Taxiway M - Rapid Exit RWY 25L');
     currentMarkers.push(twM);
 
-    // Add taxiway labels
+    // === ADDITIONAL CONNECTORS ===
+    // Taxiway N - West cross connector
+    const twN = L.polyline([
+        [22.3152, 113.9065],
+        [22.3067, 113.9065]
+    ], taxiStyle).addTo(map);
+    twN.bindPopup('Taxiway N - West Cross');
+    currentMarkers.push(twN);
+
+    // Taxiway P - East cross connector
+    const twP = L.polyline([
+        [22.3057, 113.9310],
+        [22.2972, 113.9310]
+    ], taxiStyle).addTo(map);
+    twP.bindPopup('Taxiway P - East Cross');
+    currentMarkers.push(twP);
+
+    // Taxiway Q - Terminal ramp access
+    const twQ = L.polyline([
+        [22.3152, 113.9155],
+        [22.3170, 113.9155]
+    ], taxiStyle).addTo(map);
+    twQ.bindPopup('Taxiway Q - Terminal Ramp');
+    currentMarkers.push(twQ);
+
+    // Taxiway R - Terminal ramp access
+    const twR = L.polyline([
+        [22.3152, 113.9215],
+        [22.3170, 113.9215]
+    ], taxiStyle).addTo(map);
+    twR.bindPopup('Taxiway R - Terminal Ramp');
+    currentMarkers.push(twR);
+
+    // === TAXIWAY LABELS ===
     const taxiLabels = [
-        { label: 'A', pos: [baseLat + 0.0055, baseLon - 0.0100] },
-        { label: 'B', pos: [baseLat - 0.0020, baseLon - 0.0100] },
-        { label: 'C', pos: [baseLat + 0.0015, baseLon - 0.0055] },
-        { label: 'D', pos: [baseLat + 0.0015, baseLon + 0.0015] },
-        { label: 'E', pos: [baseLat + 0.0015, baseLon + 0.0085] },
-        { label: 'F', pos: [baseLat + 0.0065, baseLon - 0.0025] },
-        { label: 'G', pos: [baseLat + 0.0065, baseLon + 0.0045] },
-        { label: 'H', pos: [baseLat + 0.0065, baseLon + 0.0115] },
-        { label: 'J', pos: [baseLat + 0.0030, baseLon - 0.0085] },
-        { label: 'K', pos: [baseLat - 0.0015, baseLon - 0.0085] },
-        { label: 'L', pos: [baseLat + 0.0030, baseLon + 0.0075] },
-        { label: 'M', pos: [baseLat - 0.0015, baseLon + 0.0075] }
+        { label: 'A', pos: [22.3160, 113.9200] },
+        { label: 'B', pos: [22.2955, 113.9200] },
+        { label: 'C', pos: [22.3085, 113.9138] },
+        { label: 'D', pos: [22.3085, 113.9185] },
+        { label: 'E', pos: [22.3085, 113.9235] },
+        { label: 'F', pos: [22.3160, 113.9120] },
+        { label: 'G', pos: [22.3160, 113.9185] },
+        { label: 'H', pos: [22.3160, 113.9255] },
+        { label: 'J', pos: [22.3135, 113.9100] },
+        { label: 'K', pos: [22.3065, 113.9100] },
+        { label: 'L', pos: [22.3055, 113.9280] },
+        { label: 'M', pos: [22.2995, 113.9280] },
+        { label: 'N', pos: [22.3110, 113.9060] },
+        { label: 'P', pos: [22.3015, 113.9315] }
     ];
 
     taxiLabels.forEach(tl => {
