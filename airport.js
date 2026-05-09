@@ -47,10 +47,10 @@ function loadAirportMap(icao) {
     document.getElementById('airportSelect').value = icao;
 
     if (map) {
-        map.setView([data.lat, data.lon], 12);
+        map.setView([data.lat, data.lon], 13);
         clearLayers();
     } else {
-        map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 12);
+        map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 13);
         // Add zoom level display
         L.control.scale({ imperial: false, metric: true }).addTo(map);
         const zoomDisplay = L.control({ position: 'bottomleft' });
