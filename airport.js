@@ -1,6 +1,7 @@
 let airportData = {};
 let map = null;
 let currentMarkers = [];
+let layerGroups = {};
 
 // Load data from JSON file
 async function loadData() {
@@ -25,7 +26,6 @@ function loadAirportMap(icao) {
         return;
     }
 
-    // Update header info
     document.getElementById('airportTitle').innerText = `${data.name} (${data.icao})`;
     document.getElementById('airportSubtitle').innerText = `${data.city}, ${data.country}`;
     document.getElementById('infoIcao').innerText = data.icao;
@@ -33,7 +33,6 @@ function loadAirportMap(icao) {
     document.getElementById('infoElev').innerText = data.elev;
     document.getElementById('infoCoords').innerText = `${data.lat}°N, ${data.lon}°E`;
 
-    // Update runways
     const runwayInfo = document.getElementById('runwayInfo');
     if (data.runways) {
         const runways = data.runways.split(', ');
@@ -45,13 +44,11 @@ function loadAirportMap(icao) {
         `).join('');
     }
 
-    // Update selector
     document.getElementById('airportSelect').value = icao;
 
-    // Initialize or update map
     if (map) {
         map.setView([data.lat, data.lon], 15);
-        clearMarkers();
+        clearLayers();
     } else {
         map = L.map('map').setView([data.lat, data.lon], 15);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -59,7 +56,6 @@ function loadAirportMap(icao) {
         }).addTo(map);
     }
 
-    // Add airport marker
     const airportIcon = L.divIcon({
         html: '✈️',
         iconSize: [30, 30],
@@ -74,27 +70,22 @@ function loadAirportMap(icao) {
     `).openPopup();
     currentMarkers.push(marker);
 
-    // Fetch real OSM data for this airport
     fetchAirportOSM(icao, data);
 }
 
-function clearMarkers() {
+function clearLayers() {
+    Object.keys(layerGroups).forEach(k => {
+        layerGroups[k].clearLayers();
+    });
     currentMarkers.forEach(m => map.removeLayer(m));
     currentMarkers = [];
 }
 
-// Fetch airport layout from OpenStreetMap Overpass API
 async function fetchAirportOSM(icao, data) {
-    const dLat = 0.05;
-    const dLon = 0.05;
-    const south = data.lat - dLat;
-    const west = data.lon - dLon;
-    const north = data.lat + dLat;
-    const east = data.lon + dLon;
-
+    const d = 0.05;
     const query = `[out:json][timeout:15];
     (
-      way["aeroway"~"runway|taxiway|apron|helipad"](${south},${west},${north},${east});
+      way["aeroway"~"runway|taxiway|apron|helipad|terminal|gate"](${data.lat-d},${data.lon-d},${data.lat+d},${data.lon+d});
     );
     out body;
     >;
@@ -106,35 +97,39 @@ async function fetchAirportOSM(icao, data) {
         const response = await fetch(url);
         const osmData = await response.json();
         renderOSMData(osmData);
-        document.getElementById('osmStatus').innerText = '✅ Airport layout loaded from OpenStreetMap';
+        document.getElementById('osmStatus').innerText = '✅ Airport layout loaded';
     } catch (error) {
-        console.error("Failed to fetch OSM data:", error);
-        document.getElementById('osmStatus').innerText = '⚠️ Could not load OSM data';
+        console.error("OSM fetch failed:", error);
+        document.getElementById('osmStatus').innerText = '⚠️ Could not load airport layout';
     }
 }
 
-// Render OSM data on the map
 function renderOSMData(osmData) {
     const elements = osmData.elements;
     if (!elements) return;
 
-    // Build node lookup
     const nodes = {};
     elements.forEach(el => {
-        if (el.type === 'node') {
-            nodes[el.id] = [el.lat, el.lon];
-        }
+        if (el.type === 'node') nodes[el.id] = [el.lat, el.lon];
     });
 
-    // Style map for aeroway types
-    const styles = {
-        'runway': { color: '#2c2c2c', weight: 8, opacity: 0.9 },
-        'taxiway': { color: '#d4a017', weight: 3, opacity: 0.8 },
-        'apron': { color: '#888888', weight: 1, fillColor: '#cccccc', fillOpacity: 0.3 },
-        'helipad': { color: '#ff4444', weight: 2, fillColor: '#ff4444', fillOpacity: 0.3 }
+    // Create layer groups
+    layerGroups = {
+        runway: L.layerGroup().addTo(map),
+        taxiway: L.layerGroup().addTo(map),
+        apron: L.layerGroup().addTo(map),
+        terminal: L.layerGroup().addTo(map),
+        label_taxiway: L.layerGroup().addTo(map),
+        label_runway: L.layerGroup().addTo(map)
     };
 
-    let hasTaxiways = false;
+    const styles = {
+        runway:  { color: '#2c2c2c', weight: 8, opacity: 0.9 },
+        taxiway: { color: '#d4a017', weight: 3, opacity: 0.8 },
+        apron:   { color: '#666', weight: 1, fillColor: '#bbb', fillOpacity: 0.25 },
+        terminal: { color: '#004494', weight: 2, fillColor: '#0056b3', fillOpacity: 0.15 },
+        helipad: { color: '#ff4444', weight: 2, fillColor: '#ff4444', fillOpacity: 0.3 }
+    };
 
     elements.forEach(el => {
         if (el.type !== 'way') return;
@@ -144,43 +139,55 @@ function renderOSMData(osmData) {
         const coords = el.nodes.map(id => nodes[id]).filter(c => c);
         if (coords.length < 2) return;
 
-        const style = styles[aeroway] || { color: '#888888', weight: 2 };
+        const style = styles[aeroway] || { color: '#888', weight: 2 };
+        const ref = el.tags.ref || '';
+        const name = el.tags.name || '';
 
-        if (aeroway === 'apron') {
-            const polygon = L.polygon(coords, style).addTo(map);
-            polygon.bindPopup('Apron');
-            currentMarkers.push(polygon);
+        let popupText = aeroway.charAt(0).toUpperCase() + aeroway.slice(1);
+        if (ref) popupText = `${ref} - ${popupText}`;
+
+        if (aeroway === 'apron' || aeroway === 'terminal') {
+            const poly = L.polygon(coords, style).addTo(layerGroups[aeroway] || layerGroups.apron);
+            poly.bindPopup(popupText);
+        } else if (aeroway === 'taxiway' && ref) {
+            const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
+            line.bindPopup(`Taxiway ${ref}`);
+
+            const midIdx = Math.floor(coords.length / 2);
+            const mid = coords[midIdx];
+            if (mid) {
+                L.marker(mid, {
+                    icon: L.divIcon({
+                        html: `<span style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-weight:bold;font-size:11px;">${ref}</span>`,
+                        iconSize: [24, 18], className: ''
+                    })
+                }).addTo(layerGroups.label_taxiway);
+            }
+        } else if (aeroway === 'runway') {
+            const line = L.polyline(coords, style).addTo(layerGroups.runway);
+            const label = ref || 'RWY';
+            line.bindPopup(`Runway ${label}${name ? '<br>' + name : ''}`);
+
+            const midIdx = Math.floor(coords.length / 2);
+            const mid = coords[midIdx];
+            if (mid) {
+                L.marker(mid, {
+                    icon: L.divIcon({
+                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:12px;">${label}</span>`,
+                        iconSize: [50, 22], className: ''
+                    })
+                }).addTo(layerGroups.label_runway);
+            }
+        } else if (aeroway === 'taxiway') {
+            const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
+            line.bindPopup('Taxiway');
         } else {
             const line = L.polyline(coords, style).addTo(map);
-            line.bindPopup(`${aeroway.charAt(0).toUpperCase() + aeroway.slice(1)}`);
-            currentMarkers.push(line);
-            if (aeroway === 'taxiway') hasTaxiways = true;
+            line.bindPopup(popupText);
         }
     });
 
-    // Add label for runways
-    elements.forEach(el => {
-        if (el.type !== 'way') return;
-        if (!el.tags || el.tags.aeroway !== 'runway') return;
-
-        const coords = el.nodes.map(id => nodes[id]).filter(c => c);
-        if (coords.length < 2) return;
-
-        // Label at midpoint
-        const midIdx = Math.floor(coords.length / 2);
-        const mid = coords[midIdx];
-        if (mid) {
-            const label = el.tags.ref || 'RWY';
-            L.marker(mid, {
-                icon: L.divIcon({
-                    html: `<span style="background:#2c2c2c;color:#fff;padding:2px 6px;border-radius:3px;font-weight:bold;font-size:12px;">${label}</span>`,
-                    iconSize: [50, 22], className: ''
-                })
-            }).addTo(map);
-        }
-    });
-
-    // Zoom to fit all features
+    // Zoom to fit
     const allCoords = [];
     elements.forEach(el => {
         if (el.type === 'way') {
@@ -191,6 +198,28 @@ function renderOSMData(osmData) {
     if (allCoords.length > 0) {
         map.fitBounds(allCoords, { padding: [50, 50] });
     }
+
+    updateLayerCounts();
+}
+
+function toggleLayer(layerName) {
+    const group = layerGroups[layerName];
+    if (!group) return;
+    const visible = map.hasLayer(group);
+    if (visible) {
+        map.removeLayer(group);
+    } else {
+        map.addLayer(group);
+    }
+}
+
+function updateLayerCounts() {
+    if (layerGroups.runway) {
+        document.getElementById('countRunways').innerText = layerGroups.runway.getLayers().length;
+    }
+    if (layerGroups.taxiway) {
+        document.getElementById('countTaxiways').innerText = layerGroups.taxiway.getLayers().length;
+    }
 }
 
 function changeAirport(icao) {
@@ -200,5 +229,4 @@ function changeAirport(icao) {
     loadAirportMap(icao);
 }
 
-// Initialize
 loadData();

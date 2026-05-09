@@ -138,7 +138,48 @@
 
 .runway-color { background: #2c2c2c; height: 8px; }
 .taxiway-color { background: #d4a017; }
-.rapid-color { background: #d4a017; border-top: 2px dashed #d4a017; height: 0; }
+.apron-color { background: #bbb; height: 12px; border: 1px solid #666; }
+.terminal-color { background: #0056b3; height: 12px; border: 1px solid #004494; }
+
+.layer-controls {
+    margin: 10px 0;
+}
+
+.layer-toggle {
+    display: flex;
+    align-items: center;
+    padding: 6px 0;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.layer-toggle input {
+    margin-right: 8px;
+    width: auto;
+}
+
+.dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+}
+
+.runway-dot { background: #2c2c2c; }
+.taxiway-dot { background: #d4a017; }
+.terminal-dot { background: #0056b3; }
+.apron-dot { background: #bbb; border: 1px solid #666; }
+.label-dot { background: #d4a017; }
+
+.count {
+    margin-left: auto;
+    background: #eee;
+    padding: 0 6px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    color: #666;
+}
 
 @media (max-width: 768px) {
     .airport-content {
