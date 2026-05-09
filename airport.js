@@ -213,10 +213,8 @@ function renderOSMData(osmData) {
         }
     });
 
-    // Zoom to fit (no animation so zoom is set immediately)
-    if (allCoords.length > 0) {
-        map.fitBounds(allCoords, { padding: [30, 30], animate: false, duration: 0 });
-    }
+    // Center map on airport at zoom 13 for all airports
+    map.setView([data.lat, data.lon], 13, { animate: false });
 
     // Enforce label visibility by zoom — remove everything that shouldn't be shown
     ['label_runway', 'label_taxiway_major', 'label_taxiway_minor'].forEach(name => {
