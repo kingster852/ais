@@ -216,13 +216,11 @@ function renderOSMData(osmData) {
     // Center map on airport at zoom 13 for all airports
     map.setView([data.lat, data.lon], 13, { animate: false });
 
-    // Enforce label visibility by zoom — remove everything that shouldn't be shown
-    ['label_runway', 'label_taxiway_major', 'label_taxiway_minor'].forEach(name => {
-        toggleLabelGroup(name, false);
-    });
+    // Enforce label visibility by zoom
     applyLabelsForZoom(map.getZoom());
 
-    // Bind future zoom changes
+    // Bind future zoom changes (remove all old to prevent stacking)
+    map.off('zoomend');
     map.on('zoomend', function() {
         applyLabelsForZoom(map.getZoom());
     });
