@@ -51,6 +51,18 @@ function loadAirportMap(icao) {
         clearLayers();
     } else {
         map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 12);
+        // Add zoom level display
+        L.control.scale({ imperial: false, metric: true }).addTo(map);
+        const zoomDisplay = L.control({ position: 'bottomleft' });
+        zoomDisplay.onAdd = function() {
+            const div = L.DomUtil.create('div', 'zoom-display');
+            div.innerHTML = 'Zoom: <span id="zoomLevel">' + map.getZoom() + '</span>';
+            map.on('zoomend', function() {
+                document.getElementById('zoomLevel').innerText = map.getZoom();
+            });
+            return div;
+        };
+        zoomDisplay.addTo(map);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);

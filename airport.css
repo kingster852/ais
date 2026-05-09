@@ -181,6 +181,15 @@
     color: #666;
 }
 
+.zoom-display {
+    background: white;
+    padding: 4px 10px;
+    border-radius: 4px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+    font-size: 13px;
+    font-weight: bold;
+}
+
 @media (max-width: 768px) {
     .airport-content {
         grid-template-columns: 1fr;
