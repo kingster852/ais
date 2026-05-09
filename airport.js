@@ -47,10 +47,10 @@ function loadAirportMap(icao) {
     document.getElementById('airportSelect').value = icao;
 
     if (map) {
-        map.setView([data.lat, data.lon], 15);
+        map.setView([data.lat, data.lon], 11);
         clearLayers();
     } else {
-        map = L.map('map').setView([data.lat, data.lon], 15);
+        map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 11);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
@@ -201,17 +201,21 @@ function renderOSMData(osmData) {
         }
     });
 
-    // Zoom to fit, then apply zoom-based label visibility after animation
+    // Zoom to fit (no animation so zoom is set immediately)
     if (allCoords.length > 0) {
-        map.fitBounds(allCoords, { padding: [50, 50] });
-        map.once('moveend', function() {
-            updateLabelsByZoom();
-            map.on('zoomend', updateLabelsByZoom);
-        });
-    } else {
-        updateLabelsByZoom();
-        map.on('zoomend', updateLabelsByZoom);
+        map.fitBounds(allCoords, { padding: [50, 50], animate: false, duration: 0 });
     }
+
+    // Enforce label visibility by zoom — remove everything that shouldn't be shown
+    ['label_runway', 'label_taxiway_major', 'label_taxiway_minor'].forEach(name => {
+        toggleLabelGroup(name, false);
+    });
+    applyLabelsForZoom(map.getZoom());
+
+    // Bind future zoom changes
+    map.on('zoomend', function() {
+        applyLabelsForZoom(map.getZoom());
+    });
 
     // Add initial label toggle checkbox for the unified group
     const toggleHtml = `
@@ -232,17 +236,11 @@ function renderOSMData(osmData) {
     updateLayerCounts();
 }
 
-function updateLabelsByZoom() {
-    const zoom = map.getZoom();
+function applyLabelsForZoom(zoom) {
     const labelsEnabled = document.querySelector('[data-layer="taxiway_labels"]')?.checked !== false;
-
-    const showRunwayLabel = zoom >= 13;
-    const showMajor = labelsEnabled && zoom >= 14;
-    const showMinor = labelsEnabled && zoom >= 15;
-
-    toggleLabelGroup('label_runway', showRunwayLabel);
-    toggleLabelGroup('label_taxiway_major', showMajor);
-    toggleLabelGroup('label_taxiway_minor', showMinor);
+    toggleLabelGroup('label_runway', zoom >= 13);
+    toggleLabelGroup('label_taxiway_major', labelsEnabled && zoom >= 14);
+    toggleLabelGroup('label_taxiway_minor', labelsEnabled && zoom >= 15);
 }
 
 function toggleLabelGroup(name, visible) {
@@ -256,7 +254,7 @@ function toggleLabelGroup(name, visible) {
 }
 
 function toggleLabelsByZoom() {
-    updateLabelsByZoom();
+    applyLabelsForZoom(map.getZoom());
 }
 
 function toggleLayer(layerName) {
