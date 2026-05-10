@@ -219,11 +219,14 @@ function renderOSMData(osmData) {
     // Enforce label visibility by zoom
     applyLabelsForZoom(map.getZoom());
 
-    // Bind future zoom changes (remove all old to prevent stacking)
-    map.off('zoomend');
-    map.on('zoomend', function() {
+    // Bind future zoom changes (remove old label listener first to prevent stacking)
+    if (window._labelZoomHandler) {
+        map.off('zoomend', window._labelZoomHandler);
+    }
+    window._labelZoomHandler = function() {
         applyLabelsForZoom(map.getZoom());
-    });
+    };
+    map.on('zoomend', window._labelZoomHandler);
 
     // Add initial label toggle checkbox for the unified group
     const toggleHtml = `
