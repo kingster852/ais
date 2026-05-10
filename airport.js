@@ -218,19 +218,25 @@ function renderOSMData(osmData) {
 
     // === LABEL TOGGLE BUTTON ON MAP ===
     let labelsVisible = true;
-    const labelBtnCtrl = L.control({ position: 'topright' });
-    labelBtnCtrl.onAdd = function() {
+
+    // Remove previous label button control if it exists
+    if (window._labelBtnCtrl) {
+        map.removeControl(window._labelBtnCtrl);
+    }
+
+    window._labelBtnCtrl = L.control({ position: 'topright' });
+    window._labelBtnCtrl.onAdd = function() {
         const div = L.DomUtil.create('div', 'label-toggle-btn');
-        div.innerHTML = '<button style="background:white;border:none;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:bold;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,0.3);" id="labelBtn">🏷️ Labels</button>';
+        div.innerHTML = '<button style="background:white;border:none;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:bold;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,0.3);">🏷️ Labels</button>';
+        div.onclick = function() {
+            labelsVisible = !labelsVisible;
+            const btn = div.querySelector('button');
+            btn.style.opacity = labelsVisible ? '1' : '0.4';
+            syncLabels();
+        };
         return div;
     };
-    labelBtnCtrl.addTo(map);
-
-    document.getElementById('labelBtn').onclick = function() {
-        labelsVisible = !labelsVisible;
-        this.style.opacity = labelsVisible ? '1' : '0.4';
-        syncLabels();
-    };
+    window._labelBtnCtrl.addTo(map);
 
     function syncLabels() {
         if (!labelsVisible) {
