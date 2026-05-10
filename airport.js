@@ -246,9 +246,9 @@ function renderOSMData(osmData) {
 
 function applyLabelsForZoom(zoom) {
     const labelsEnabled = document.querySelector('[data-layer="taxiway_labels"]')?.checked !== false;
-    toggleLabelGroup('label_runway', zoom >= 13);
-    toggleLabelGroup('label_taxiway_major', labelsEnabled && zoom >= 14);
-    toggleLabelGroup('label_taxiway_minor', labelsEnabled && zoom >= 15);
+    toggleLabelGroup('label_runway', zoom >= 12);
+    toggleLabelGroup('label_taxiway_major', labelsEnabled && zoom >= 13);
+    toggleLabelGroup('label_taxiway_minor', labelsEnabled && zoom >= 14);
 }
 
 function toggleLabelGroup(name, visible) {
