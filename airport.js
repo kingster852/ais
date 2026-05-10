@@ -187,6 +187,13 @@ function renderOSMData(osmData) {
     // Add all labels to the map immediately
     labelMarkers.forEach(m => m.addTo(layerGroups.labels));
 
+    // Show diagnostic
+    const runwayCount = labelMarkers.filter(m => m._labelType === 'runway').length;
+    const majorCount = labelMarkers.filter(m => m._labelType === 'major').length;
+    const minorCount = labelMarkers.filter(m => m._labelType === 'minor').length;
+    document.getElementById('osmStatus').innerText = 
+        `✅ Loaded (RWY:${runwayCount} TWY-M:${majorCount} TWY-m:${minorCount})`;
+
     // Center map
     map.setView([data.lat, data.lon], 13, { animate: false });
 
