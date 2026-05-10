@@ -216,33 +216,39 @@ function renderOSMData(osmData) {
     // Center map on airport at zoom 13 for all airports
     map.setView([data.lat, data.lon], 13, { animate: false });
 
-    // Enforce label visibility by zoom
-    applyLabelsForZoom(map.getZoom());
-
-    // Bind future zoom changes (remove old label listener first to prevent stacking)
-    if (window._labelZoomHandler) {
-        map.off('zoomend', window._labelZoomHandler);
-    }
-    window._labelZoomHandler = function() {
-        applyLabelsForZoom(map.getZoom());
+    // === LABEL TOGGLE BUTTON ON MAP ===
+    let labelsVisible = true;
+    const labelBtnCtrl = L.control({ position: 'topright' });
+    labelBtnCtrl.onAdd = function() {
+        const div = L.DomUtil.create('div', 'label-toggle-btn');
+        div.innerHTML = '<button style="background:white;border:none;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:bold;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,0.3);" id="labelBtn">🏷️ Labels</button>';
+        return div;
     };
-    map.on('zoomend', window._labelZoomHandler);
+    labelBtnCtrl.addTo(map);
 
-    // Add initial label toggle checkbox for the unified group
-    const toggleHtml = `
-        <label class="layer-toggle">
-            <input type="checkbox" data-layer="taxiway_labels" checked onchange="toggleLabelsByZoom()">
-            <span class="dot label-dot"></span> Taxiway Labels
-        </label>`;
-    // Remove old label toggle if exists and insert new one
-    const oldToggle = document.querySelector('[data-layer="label_taxiway"]');
-    if (oldToggle) {
-        oldToggle.closest('.layer-toggle').remove();
+    document.getElementById('labelBtn').onclick = function() {
+        labelsVisible = !labelsVisible;
+        this.style.opacity = labelsVisible ? '1' : '0.4';
+        syncLabels();
+    };
+
+    function syncLabels() {
+        if (!labelsVisible) {
+            toggleLabelGroup('label_runway', false);
+            toggleLabelGroup('label_taxiway_major', false);
+            toggleLabelGroup('label_taxiway_minor', false);
+            return;
+        }
+        applyLabelsForZoom(map.getZoom());
     }
-    const container = document.querySelector('.layer-controls');
-    if (container && !document.querySelector('[data-layer="taxiway_labels"]')) {
-        container.insertAdjacentHTML('beforeend', toggleHtml);
+
+    // Apply labels and bind zoom changes
+    syncLabels();
+    if (window._oldZoomHandler) {
+        map.off('zoomend', window._oldZoomHandler);
     }
+    window._oldZoomHandler = function() { syncLabels(); };
+    map.on('zoomend', window._oldZoomHandler);
 
     updateLayerCounts();
 }
