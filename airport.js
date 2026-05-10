@@ -1,18 +1,14 @@
 let airportData = {};
 let map = null;
-let currentMarkers = [];
+let allMarkers = [];
 let layerGroups = {};
 
-// Load data from JSON file
 async function loadData() {
     try {
         const response = await fetch('data/airports.json');
         airportData = await response.json();
-        console.log("Airport data loaded.");
-        
         const params = new URLSearchParams(window.location.search);
         const icao = params.get('icao') || 'HKG';
-        
         loadAirportMap(icao);
     } catch (error) {
         console.error("Failed to load airport data:", error);
@@ -21,10 +17,7 @@ async function loadData() {
 
 function loadAirportMap(icao) {
     const data = airportData[icao];
-    if (!data) {
-        alert("Airport not found!");
-        return;
-    }
+    if (!data) { alert("Airport not found!"); return; }
 
     document.getElementById('airportTitle').innerText = `${data.name} (${data.icao})`;
     document.getElementById('airportSubtitle').innerText = `${data.city}, ${data.country}`;
@@ -51,7 +44,6 @@ function loadAirportMap(icao) {
         clearLayers();
     } else {
         map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 13);
-        // Add zoom level display
         L.control.scale({ imperial: false, metric: true }).addTo(map);
         const zoomDisplay = L.control({ position: 'bottomleft' });
         zoomDisplay.onAdd = function() {
@@ -69,40 +61,29 @@ function loadAirportMap(icao) {
     }
 
     const airportIcon = L.divIcon({
-        html: '✈️',
-        iconSize: [30, 30],
-        className: 'airport-marker'
+        html: '✈️', iconSize: [30, 30], className: 'airport-marker'
     });
 
     const marker = L.marker([data.lat, data.lon], { icon: airportIcon }).addTo(map);
-    marker.bindPopup(`
-        <strong>${data.name}</strong><br>
-        ICAO: ${data.icao} | IATA: ${data.iata}<br>
-        Elevation: ${data.elev}
-    `).openPopup();
-    currentMarkers.push(marker);
+    marker.bindPopup(`<strong>${data.name}</strong><br>ICAO: ${data.icao} | IATA: ${data.iata}<br>Elevation: ${data.elev}`).openPopup();
+    allMarkers.push(marker);
 
     fetchAirportOSM(icao, data);
 }
 
 function clearLayers() {
     Object.keys(layerGroups).forEach(k => {
-        layerGroups[k].clearLayers();
+        if (map.hasLayer(layerGroups[k])) map.removeLayer(layerGroups[k]);
     });
-    currentMarkers.forEach(m => map.removeLayer(m));
-    currentMarkers = [];
+    allMarkers.forEach(m => map.removeLayer(m));
+    allMarkers = [];
 }
 
 async function fetchAirportOSM(icao, data) {
     const d = 0.05;
     const query = `[out:json][timeout:15];
-    (
-      way["aeroway"~"runway|taxiway|apron|helipad|terminal|gate"](${data.lat-d},${data.lon-d},${data.lat+d},${data.lon+d});
-    );
-    out body;
-    >;
-    out skel qt;`;
-
+    (way["aeroway"~"runway|taxiway|apron|helipad|terminal|gate"](${data.lat-d},${data.lon-d},${data.lat+d},${data.lon+d}));
+    out body; >; out skel qt;`;
     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
 
     try {
@@ -125,16 +106,12 @@ function renderOSMData(osmData) {
         if (el.type === 'node') nodes[el.id] = [el.lat, el.lon];
     });
 
-    // Create layer groups — major/minor taxiway labels for zoom LOD
-    // NOTE: label layers are NOT added to map initially — updateLabelsByZoom controls them
     layerGroups = {
         runway: L.layerGroup().addTo(map),
         taxiway: L.layerGroup().addTo(map),
         apron: L.layerGroup().addTo(map),
         terminal: L.layerGroup().addTo(map),
-        label_taxiway_major: L.layerGroup(),
-        label_taxiway_minor: L.layerGroup(),
-        label_runway: L.layerGroup()
+        labels: L.layerGroup().addTo(map)
     };
 
     const styles = {
@@ -144,6 +121,8 @@ function renderOSMData(osmData) {
         terminal: { color: '#004494', weight: 2, fillColor: '#0056b3', fillOpacity: 0.15 },
         helipad: { color: '#ff4444', weight: 2, fillColor: '#ff4444', fillOpacity: 0.3 }
     };
+
+    const labelMarkers = [];
 
     elements.forEach(el => {
         if (el.type !== 'way') return;
@@ -156,148 +135,102 @@ function renderOSMData(osmData) {
         const style = styles[aeroway] || { color: '#888', weight: 2 };
         const ref = el.tags.ref || '';
         const name = el.tags.name || '';
-
         let popupText = aeroway.charAt(0).toUpperCase() + aeroway.slice(1);
         if (ref) popupText = `${ref} - ${popupText}`;
 
         if (aeroway === 'apron' || aeroway === 'terminal') {
-            const poly = L.polygon(coords, style).addTo(layerGroups[aeroway] || layerGroups.apron);
-            poly.bindPopup(popupText);
-        } else if (aeroway === 'taxiway' && ref) {
-            const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
-            line.bindPopup(`Taxiway ${ref}`);
-
-            // Calculate approximate length
-            const latlngs = coords.map(c => L.latLng(c[0], c[1]));
-            let length = 0;
-            for (let i = 1; i < latlngs.length; i++) {
-                length += latlngs[i-1].distanceTo(latlngs[i]);
-            }
-
-            const midIdx = Math.floor(coords.length / 2);
-            const mid = coords[midIdx];
-            if (mid) {
-                const label = L.marker(mid, {
-                    icon: L.divIcon({
-                        html: `<span style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-weight:bold;font-size:11px;">${ref}</span>`,
-                        iconSize: [24, 18], className: ''
-                    })
-                });
-                if (length > 400) {
-                    label.addTo(layerGroups.label_taxiway_major);
-                } else {
-                    label.addTo(layerGroups.label_taxiway_minor);
-                }
-            }
+            L.polygon(coords, style).addTo(layerGroups[aeroway] || layerGroups.apron).bindPopup(popupText);
         } else if (aeroway === 'runway') {
             const line = L.polyline(coords, style).addTo(layerGroups.runway);
-            const label = ref || 'RWY';
-            line.bindPopup(`Runway ${label}${name ? '<br>' + name : ''}`);
-
+            const labelText = ref || 'RWY';
+            line.bindPopup(`Runway ${labelText}${name ? '<br>' + name : ''}`);
             const midIdx = Math.floor(coords.length / 2);
             const mid = coords[midIdx];
             if (mid) {
-                L.marker(mid, {
+                const m = L.marker(mid, {
                     icon: L.divIcon({
-                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:12px;">${label}</span>`,
+                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:12px;">${labelText}</span>`,
                         iconSize: [50, 22], className: ''
                     })
-                }).addTo(layerGroups.label_runway);
+                });
+                m._labelType = 'runway';
+                labelMarkers.push(m);
             }
         } else if (aeroway === 'taxiway') {
             const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
-            line.bindPopup('Taxiway');
+            line.bindPopup(ref ? `Taxiway ${ref}` : 'Taxiway');
+            if (ref) {
+                const midIdx = Math.floor(coords.length / 2);
+                const mid = coords[midIdx];
+                if (mid) {
+                    const latlngs = coords.map(c => L.latLng(c[0], c[1]));
+                    let length = 0;
+                    for (let i = 1; i < latlngs.length; i++) length += latlngs[i-1].distanceTo(latlngs[i]);
+                    const m = L.marker(mid, {
+                        icon: L.divIcon({
+                            html: `<span style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-weight:bold;font-size:11px;">${ref}</span>`,
+                            iconSize: [24, 18], className: ''
+                        })
+                    });
+                    m._labelType = length > 400 ? 'major' : 'minor';
+                    labelMarkers.push(m);
+                }
+            }
         } else {
-            const line = L.polyline(coords, style).addTo(map);
-            line.bindPopup(popupText);
+            L.polyline(coords, style).addTo(map).bindPopup(popupText);
         }
     });
 
-    // Center map on airport at zoom 13 for all airports
+    // Store label markers for zoom-based visibility
+    window._labelMarkers = labelMarkers;
+
+    // Add all labels to the map immediately
+    labelMarkers.forEach(m => m.addTo(layerGroups.labels));
+
+    // Center map
     map.setView([data.lat, data.lon], 13, { animate: false });
 
-    // === LABEL TOGGLE BUTTON ON MAP ===
-    let labelsVisible = true;
+    // Apply zoom-based visibility
+    window._labelsOn = true;
+    applyLabelVisibility();
 
-    // Remove previous label button control if it exists
-    if (window._labelBtnCtrl) {
-        map.removeControl(window._labelBtnCtrl);
-    }
-
-    window._labelBtnCtrl = L.control({ position: 'topright' });
-    window._labelBtnCtrl.onAdd = function() {
-        const div = L.DomUtil.create('div', 'label-toggle-btn');
-        div.innerHTML = '<button style="background:white;border:none;padding:6px 12px;cursor:pointer;font-size:13px;font-weight:bold;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,0.3);">🏷️ Labels</button>';
-        div.onclick = function() {
-            labelsVisible = !labelsVisible;
-            const btn = div.querySelector('button');
-            btn.style.opacity = labelsVisible ? '1' : '0.4';
-            syncLabels();
-        };
-        return div;
-    };
-    window._labelBtnCtrl.addTo(map);
-
-    function syncLabels() {
-        if (!labelsVisible) {
-            toggleLabelGroup('label_runway', false);
-            toggleLabelGroup('label_taxiway_major', false);
-            toggleLabelGroup('label_taxiway_minor', false);
-            return;
-        }
-        applyLabelsForZoom(map.getZoom());
-    }
-
-    // Apply labels and bind zoom changes
-    syncLabels();
-    if (window._oldZoomHandler) {
-        map.off('zoomend', window._oldZoomHandler);
-    }
-    window._oldZoomHandler = function() { syncLabels(); };
-    map.on('zoomend', window._oldZoomHandler);
+    // Bind zoom changes (use named handler to avoid removing other listeners)
+    if (window._labelZoomHandler) map.off('zoomend', window._labelZoomHandler);
+    window._labelZoomHandler = function() { applyLabelVisibility(); };
+    map.on('zoomend', window._labelZoomHandler);
 
     updateLayerCounts();
 }
 
-function applyLabelsForZoom(zoom) {
-    const labelsEnabled = document.querySelector('[data-layer="taxiway_labels"]')?.checked !== false;
-    toggleLabelGroup('label_runway', zoom >= 12);
-    toggleLabelGroup('label_taxiway_major', labelsEnabled && zoom >= 13);
-    toggleLabelGroup('label_taxiway_minor', labelsEnabled && zoom >= 14);
+function toggleLabels() {
+    window._labelsOn = !window._labelsOn;
+    const btn = document.getElementById('labelToggleBtn');
+    if (btn) btn.style.opacity = window._labelsOn ? '1' : '0.4';
+    applyLabelVisibility();
 }
 
-function toggleLabelGroup(name, visible) {
-    const group = layerGroups[name];
-    if (!group) return;
-    if (visible && !map.hasLayer(group)) {
-        map.addLayer(group);
-    } else if (!visible && map.hasLayer(group)) {
-        map.removeLayer(group);
-    }
-}
-
-function toggleLabelsByZoom() {
-    applyLabelsForZoom(map.getZoom());
+function applyLabelVisibility() {
+    const z = map.getZoom();
+    const markers = window._labelMarkers || [];
+    markers.forEach(m => {
+        if (!window._labelsOn) { layerGroups.labels.removeLayer(m); return; }
+        if (m._labelType === 'runway' && z >= 12) { layerGroups.labels.addLayer(m); }
+        else if (m._labelType === 'major' && z >= 13) { layerGroups.labels.addLayer(m); }
+        else if (m._labelType === 'minor' && z >= 14) { layerGroups.labels.addLayer(m); }
+        else { layerGroups.labels.removeLayer(m); }
+    });
 }
 
 function toggleLayer(layerName) {
     const group = layerGroups[layerName];
     if (!group) return;
-    const visible = map.hasLayer(group);
-    if (visible) {
-        map.removeLayer(group);
-    } else {
-        map.addLayer(group);
-    }
+    if (map.hasLayer(group)) map.removeLayer(group);
+    else map.addLayer(group);
 }
 
 function updateLayerCounts() {
-    if (layerGroups.runway) {
-        document.getElementById('countRunways').innerText = layerGroups.runway.getLayers().length;
-    }
-    if (layerGroups.taxiway) {
-        document.getElementById('countTaxiways').innerText = layerGroups.taxiway.getLayers().length;
-    }
+    if (layerGroups.runway) document.getElementById('countRunways').innerText = layerGroups.runway.getLayers().length;
+    if (layerGroups.taxiway) document.getElementById('countTaxiways').innerText = layerGroups.taxiway.getLayers().length;
 }
 
 function changeAirport(icao) {
