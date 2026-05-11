@@ -125,7 +125,7 @@ function renderOSMData(osmData) {
         helipad: { color: '#ff4444', weight: 2, fillColor: '#ff4444', fillOpacity: 0.3 }
     };
 
-    const labelFeatures = [];
+    const allLabels = [];
 
     elements.forEach(el => {
         if (el.type !== 'way') return;
@@ -150,13 +150,14 @@ function renderOSMData(osmData) {
             const midIdx = Math.floor(coords.length / 2);
             const mid = coords[midIdx];
             if (mid) {
-                labelFeatures.push({
-                    type: 'runway',
-                    latlng: L.latLng(mid[0], mid[1]),
-                    text: labelText,
-                    bg: '#2c2c2c',
-                    color: '#fff'
+                const m = L.marker(mid, {
+                    icon: L.divIcon({
+                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:13px;white-space:nowrap;">${labelText}</span>`,
+                        iconSize: [50, 22], className: 'rwy-label'
+                    })
                 });
+                m._labelType = 'runway';
+                allLabels.push(m);
             }
         } else if (aeroway === 'taxiway') {
             const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
@@ -166,15 +167,25 @@ function renderOSMData(osmData) {
                 const mid = coords[midIdx];
                 if (mid) {
                     const latlngs = coords.map(c => L.latLng(c[0], c[1]));
-                    let length = 0;
-                    for (let i = 1; i < latlngs.length; i++) length += latlngs[i-1].distanceTo(latlngs[i]);
-                    labelFeatures.push({
-                        type: length > 400 ? 'major' : 'minor',
-                        latlng: L.latLng(mid[0], mid[1]),
-                        text: ref,
-                        bg: '#d4a017',
-                        color: '#000'
-                    });
+                    let len = 0;
+                    for (let i = 1; i < latlngs.length; i++) len += latlngs[i-1].distanceTo(latlngs[i]);
+                    const m = L.marker(mid, {
+                        icon: L.divIcon({
+                            html: `<span style="background:#d4a017;color:#000;padding:2px 6px;border-radius:3px;font-weight:bold;font-size:12px;white-space:nowrap;border:1px solid #b8860b;">${ref}</span>`,
+                            iconSize: [30, 20], className: 'twy-label'
+                        })
+    });
+
+    // Add all labels to the map immediately
+    window._labelMarkers = allLabels;
+    allLabels.forEach(m => m.addTo(layerGroups.labels));
+
+    const rCnt = allLabels.filter(m => m._labelType === 'runway').length;
+    const mCnt = allLabels.filter(m => m._labelType === 'major').length;
+    const iCnt = allLabels.filter(m => m._labelType === 'minor').length;
+    document.getElementById('osmStatus').innerText = `✅ RWY:${rCnt} M:${mCnt} m:${iCnt} (${allLabels.length} total)`;
+                    m._labelType = len > 400 ? 'major' : 'minor';
+                    allLabels.push(m);
                 }
             }
         } else {

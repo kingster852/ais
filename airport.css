@@ -196,6 +196,11 @@
     border: none !important;
 }
 
+.rwy-label, .twy-label {
+    background: none !important;
+    border: none !important;
+}
+
 @media (max-width: 768px) {
     .airport-content {
         grid-template-columns: 1fr;
