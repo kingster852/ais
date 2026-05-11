@@ -85,15 +85,18 @@ async function fetchAirportOSM(icao, data) {
     (way["aeroway"~"runway|taxiway|apron|helipad|terminal|gate"](${data.lat-d},${data.lon-d},${data.lat+d},${data.lon+d}));
     out body; >; out skel qt;`;
     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+    
+    document.getElementById('osmStatus').innerText = '⏳ Fetching OSM data...';
 
     try {
         const response = await fetch(url);
         const osmData = await response.json();
+        const wayCount = (osmData.elements || []).filter(e => e.type === 'way').length;
+        document.getElementById('osmStatus').innerText = `⏳ Rendering ${wayCount} ways...`;
         renderOSMData(osmData);
-        document.getElementById('osmStatus').innerText = '✅ Airport layout loaded';
     } catch (error) {
         console.error("OSM fetch failed:", error);
-        document.getElementById('osmStatus').innerText = '⚠️ Could not load airport layout';
+        document.getElementById('osmStatus').innerText = '⚠️ OSM fetch failed: ' + error.message;
     }
 }
 
