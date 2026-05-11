@@ -122,7 +122,7 @@ function renderOSMData(osmData) {
         helipad: { color: '#ff4444', weight: 2, fillColor: '#ff4444', fillOpacity: 0.3 }
     };
 
-    const labelMarkers = [];
+    const labelFeatures = [];
 
     elements.forEach(el => {
         if (el.type !== 'way') return;
@@ -147,14 +147,13 @@ function renderOSMData(osmData) {
             const midIdx = Math.floor(coords.length / 2);
             const mid = coords[midIdx];
             if (mid) {
-                const m = L.marker(mid, {
-                    icon: L.divIcon({
-                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:12px;">${labelText}</span>`,
-                        iconSize: [50, 22], className: ''
-                    })
+                labelFeatures.push({
+                    type: 'runway',
+                    latlng: L.latLng(mid[0], mid[1]),
+                    text: labelText,
+                    bg: '#2c2c2c',
+                    color: '#fff'
                 });
-                m._labelType = 'runway';
-                labelMarkers.push(m);
             }
         } else if (aeroway === 'taxiway') {
             const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
@@ -166,14 +165,13 @@ function renderOSMData(osmData) {
                     const latlngs = coords.map(c => L.latLng(c[0], c[1]));
                     let length = 0;
                     for (let i = 1; i < latlngs.length; i++) length += latlngs[i-1].distanceTo(latlngs[i]);
-                    const m = L.marker(mid, {
-                        icon: L.divIcon({
-                            html: `<span style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-weight:bold;font-size:11px;">${ref}</span>`,
-                            iconSize: [24, 18], className: ''
-                        })
+                    labelFeatures.push({
+                        type: length > 400 ? 'major' : 'minor',
+                        latlng: L.latLng(mid[0], mid[1]),
+                        text: ref,
+                        bg: '#d4a017',
+                        color: '#000'
                     });
-                    m._labelType = length > 400 ? 'major' : 'minor';
-                    labelMarkers.push(m);
                 }
             }
         } else {
@@ -181,18 +179,30 @@ function renderOSMData(osmData) {
         }
     });
 
-    // Store label markers for zoom-based visibility
-    window._labelMarkers = labelMarkers;
+    // Create label markers from features
+    const labelMarkers = [];
+    labelFeatures.forEach(f => {
+        const marker = L.marker(f.latlng, {
+            icon: L.divIcon({
+                html: `<span style="background:${f.bg};color:${f.color};padding:2px 6px;border-radius:3px;font-weight:bold;font-size:12px;border:1px solid ${f.bg === '#d4a017' ? '#b8860b' : '#000'};">${f.text}</span>`,
+                iconSize: [60, 22],
+                iconAnchor: [30, 11],
+                className: 'label-marker'
+            })
+        });
+        marker._labelType = f.type;
+        marker._labelText = f.text;
+        labelMarkers.push(marker);
+    });
 
-    // Add all labels to the map immediately
+    // Store and add to map
+    window._labelMarkers = labelMarkers;
     labelMarkers.forEach(m => m.addTo(layerGroups.labels));
 
-    // Show diagnostic
-    const runwayCount = labelMarkers.filter(m => m._labelType === 'runway').length;
-    const majorCount = labelMarkers.filter(m => m._labelType === 'major').length;
-    const minorCount = labelMarkers.filter(m => m._labelType === 'minor').length;
-    document.getElementById('osmStatus').innerText = 
-        `✅ Loaded (RWY:${runwayCount} TWY-M:${majorCount} TWY-m:${minorCount})`;
+    const rCnt = labelFeatures.filter(f => f.type === 'runway').length;
+    const mCnt = labelFeatures.filter(f => f.type === 'major').length;
+    const iCnt = labelFeatures.filter(f => f.type === 'minor').length;
+    document.getElementById('osmStatus').innerText = `✅ Loaded (RWY:${rCnt} M:${mCnt} m:${iCnt})`;
 
     // Center map
     map.setView([data.lat, data.lon], 13, { animate: false });
@@ -226,6 +236,10 @@ function applyLabelVisibility() {
         else if (m._labelType === 'minor' && z >= 14) { layerGroups.labels.addLayer(m); }
         else { layerGroups.labels.removeLayer(m); }
     });
+    // Update button text with count
+    const btn = document.getElementById('labelToggleBtn');
+    const total = (window._labelMarkers || []).length;
+    if (btn) btn.innerHTML = `🏷️ Labels (${total})`;
 }
 
 function toggleLayer(layerName) {

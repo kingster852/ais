@@ -191,6 +191,11 @@
     font-weight: bold;
 }
 
+.label-marker {
+    background: none !important;
+    border: none !important;
+}
+
 @media (max-width: 768px) {
     .airport-content {
         grid-template-columns: 1fr;
