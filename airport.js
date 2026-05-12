@@ -80,11 +80,19 @@ function loadAirportMap(icao) {
 }
 
 function clearLayers() {
+    // Remove layer groups
     Object.keys(layerGroups).forEach(k => {
         if (map.hasLayer(layerGroups[k])) map.removeLayer(layerGroups[k]);
     });
+    // Remove direct markers
     allMarkers.forEach(m => map.removeLayer(m));
     allMarkers = [];
+    // Remove all label markers from previous airport
+    const oldLabels = window._labelMarkers || [];
+    oldLabels.forEach(m => {
+        if (map.hasLayer(m)) map.removeLayer(m);
+    });
+    window._labelMarkers = [];
 }
 
 async function fetchAirportOSM(icao, data) {
@@ -121,8 +129,7 @@ function renderOSMData(osmData) {
         runway: L.layerGroup().addTo(map),
         taxiway: L.layerGroup().addTo(map),
         apron: L.layerGroup().addTo(map),
-        terminal: L.layerGroup().addTo(map),
-        labels: L.layerGroup().addTo(map)
+        terminal: L.layerGroup().addTo(map)
     };
 
     const styles = {
@@ -186,12 +193,24 @@ function renderOSMData(osmData) {
 
     // Add all labels to the map immediately
     window._labelMarkers = allLabels;
-    allLabels.forEach(m => m.addTo(layerGroups.labels));
+    allLabels.forEach(m => m.addTo(map));
 
     const rCnt = allLabels.filter(m => m._labelType === 'runway').length;
     const mCnt = allLabels.filter(m => m._labelType === 'major').length;
     const iCnt = allLabels.filter(m => m._labelType === 'minor').length;
     document.getElementById('osmStatus').innerText = `✅ RWY:${rCnt} M:${mCnt} m:${iCnt} (${allLabels.length} total)`;
+
+    // Center map
+    map.setView([data.lat, data.lon], 13, { animate: false });
+
+    // Apply zoom visibility
+    window._labelsOn = true;
+    applyLabelVisibility();
+
+    // Bind zoom changes
+    if (window._labelZoomHandler) map.off('zoomend', window._labelZoomHandler);
+    window._labelZoomHandler = function() { applyLabelVisibility(); };
+    map.on('zoomend', window._labelZoomHandler);
                     m._labelType = len > 400 ? 'major' : 'minor';
                     allLabels.push(m);
                 }
@@ -252,13 +271,12 @@ function applyLabelVisibility() {
     const z = map.getZoom();
     const markers = window._labelMarkers || [];
     markers.forEach(m => {
-        if (!window._labelsOn) { layerGroups.labels.removeLayer(m); return; }
-        if (m._labelType === 'runway' && z >= 12) { layerGroups.labels.addLayer(m); }
-        else if (m._labelType === 'major' && z >= 13) { layerGroups.labels.addLayer(m); }
-        else if (m._labelType === 'minor' && z >= 14) { layerGroups.labels.addLayer(m); }
-        else { layerGroups.labels.removeLayer(m); }
+        if (!window._labelsOn) { map.removeLayer(m); return; }
+        if (m._labelType === 'runway' && z >= 12) { map.addLayer(m); }
+        else if (m._labelType === 'major' && z >= 13) { map.addLayer(m); }
+        else if (m._labelType === 'minor' && z >= 14) { map.addLayer(m); }
+        else { map.removeLayer(m); }
     });
-    // Update button text with count
     const btn = document.getElementById('labelToggleBtn');
     const total = (window._labelMarkers || []).length;
     if (btn) btn.innerHTML = `🏷️ Labels (${total})`;
