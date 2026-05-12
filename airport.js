@@ -65,8 +65,16 @@ function loadAirportMap(icao) {
     });
 
     const marker = L.marker([data.lat, data.lon], { icon: airportIcon }).addTo(map);
-    marker.bindPopup(`<strong>${data.name}</strong><br>ICAO: ${data.icao} | IATA: ${data.iata}<br>Elevation: ${data.elev}`).openPopup();
+    marker.bindPopup(`<strong>${data.name}</strong><br>ICAO: ${data.icao} | IATA: ${data.iata}<br>Elevation: ${data.elev}`);
     allMarkers.push(marker);
+
+    // *** TEST: Guaranteed visible label to verify labels work ***
+    L.marker([data.lat + 0.005, data.lon + 0.005], {
+        icon: L.divIcon({
+            html: '<span style="background:red;color:white;padding:5px 10px;font-size:16px;font-weight:bold;">TEST LABEL</span>',
+            iconSize: [100, 30], className: 'test-label'
+        })
+    }).addTo(map);
 
     fetchAirportOSM(icao, data);
 }

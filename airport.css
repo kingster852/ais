@@ -201,6 +201,11 @@
     border: none !important;
 }
 
+.test-label {
+    background: none !important;
+    border: none !important;
+}
+
 @media (max-width: 768px) {
     .airport-content {
         grid-template-columns: 1fr;
