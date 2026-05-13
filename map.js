@@ -59,29 +59,28 @@ function render(data, elements) {
             const line = L.polyline(coords, { color: '#2c2c2c', weight: 8 }).addTo(map);
             drawn.push(line); rw++;
             const ref = el.tags.ref || 'RWY';
-            {
-                const mid = coords[Math.floor(coords.length/2)];
-                const lbl = L.marker(mid, {
-                    icon: L.divIcon({
-                        html: `<b style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-size:12px;">${ref}</b>`,
-                        iconSize: [50, 22], className: ''
-                    })
-                }).addTo(map);
-                drawn.push(lbl); lb++;
-            }
+            const mid = coords[Math.floor(coords.length/2)];
+            line.bindTooltip(`<b>${ref}</b>`, {
+                permanent: true, direction: 'center',
+                className: 'rwy-label-tip', opacity: 1
+            }).openTooltip();
+            lb++;
         } else if (a === 'taxiway') {
             const line = L.polyline(coords, { color: '#d4a017', weight: 3 }).addTo(map);
             drawn.push(line); tw++;
             const ref = el.tags.ref;
             if (ref) {
                 const mid = coords[Math.floor(coords.length/2)];
-                const lbl = L.marker(mid, {
-                    icon: L.divIcon({
-                        html: `<b style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-size:11px;">${ref}</b>`,
-                        iconSize: [24, 18], className: ''
-                    })
-                }).addTo(map);
-                drawn.push(lbl); lb++;
+                const m = L.marker(mid, {
+                    opacity: 0,
+                    icon: L.divIcon({ html: '', iconSize: [1, 1], className: '' })
+                }).addTo(map).bindTooltip(`<b>${ref}</b>`, {
+                    permanent: true, direction: 'center',
+                    className: 'twy-label-tip', opacity: 1
+                });
+                m.openTooltip();
+                drawn.push(m);
+                lb++;
             }
         } else if (a === 'apron') {
             const p = L.polygon(coords, { color: '#666', weight: 1, fillColor: '#bbb', fillOpacity: 0.25 }).addTo(map);

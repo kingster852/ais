@@ -10,3 +10,21 @@ body { margin: 0; padding: 0; }
 .info-bar span { font-weight: bold; }
 .info-bar select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
 #status { color: #888; font-size: 12px; }
+.rwy-label-tip {
+    background: #2c2c2c !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 2px 7px !important;
+    font-size: 12px !important;
+}
+.rwy-label-tip:before { display: none !important; }
+.twy-label-tip {
+    background: #d4a017 !important;
+    color: #000 !important;
+    border: none !important;
+    border-radius: 3px !important;
+    padding: 1px 5px !important;
+    font-size: 11px !important;
+}
+.twy-label-tip:before { display: none !important; }
