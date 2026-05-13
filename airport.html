@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AIS Airport Map</title>
+    <title>Airport Map</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="airport.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -11,49 +11,79 @@
 <body>
     <header>
         <div class="header-content">
-            <h1>✈️ AIS Airport Map</h1>
+            <h1>✈️ Pilot AIS</h1>
             <nav>
                 <a href="index.html">Dashboard</a>
-                <a href="#" id="navName" class="active">Map</a>
+                <a href="airport.html?icao=HKG" class="active">Airport Map</a>
             </nav>
         </div>
     </header>
+
     <main>
         <div class="airport-container">
             <div class="airport-header">
                 <h2 id="airportTitle">Loading...</h2>
-                <p id="airportSubtitle"></p>
+                <p id="airportSubtitle">-</p>
             </div>
+
             <div class="airport-content">
-                <div class="map-box">
+                <div class="map-panel">
                     <div id="map"></div>
+                    <button id="labelToggleBtn" onclick="toggleLabels()" style="position:absolute;top:10px;right:10px;z-index:1000;background:white;border:none;padding:6px 12px;border-radius:4px;box-shadow:0 1px 5px rgba(0,0,0,0.3);cursor:pointer;font-size:13px;font-weight:bold;">🏷️ Labels</button>
                 </div>
-                <div class="info-box">
-                    <h3>Info</h3>
+
+                <div class="info-panel">
+                    <h3>Airport Information</h3>
                     <div class="data-row"><span>ICAO:</span> <span id="infoIcao">-</span></div>
                     <div class="data-row"><span>IATA:</span> <span id="infoIata">-</span></div>
                     <div class="data-row"><span>Elevation:</span> <span id="infoElev">-</span></div>
-                    <div class="data-row"><span>Runways:</span> <span id="infoRunways">-</span></div>
-                    <p id="osmStatus">Loading airport data...</p>
-                    <h3>Switch Airport</h3>
-                    <select id="airportSelect" onchange="changeAirport(this.value)">
-                        <option value="HKG">Hong Kong</option>
-                        <option value="JFK">New York JFK</option>
-                        <option value="LHR">London Heathrow</option>
-                        <option value="DXB">Dubai</option>
-                        <option value="LAX">Los Angeles</option>
-                        <option value="SIN">Singapore</option>
-                        <option value="CDG">Paris CDG</option>
-                        <option value="NRT">Tokyo Narita</option>
-                        <option value="SYD">Sydney</option>
-                        <option value="FRA">Frankfurt</option>
-                        <option value="AMS">Amsterdam</option>
-                    </select>
+                    <div class="data-row"><span>Coordinates:</span> <span id="infoCoords">-</span></div>
+                    
+                    <h3>Runways</h3>
+                    <div id="runwayInfo" class="runway-info">
+                        Loading...
+                    </div>
+
+                    <h3>Quick Links</h3>
                     <a href="index.html" class="back-link">← Back to Dashboard</a>
+                    
+                    <h3>Map Layers</h3>
+                    <div class="layer-controls">
+                        <label class="layer-toggle"><input type="checkbox" data-layer="runway" checked onchange="toggleLayer('runway')"> <span class="dot runway-dot"></span> Runways <span id="countRunways" class="count">0</span></label>
+                        <label class="layer-toggle"><input type="checkbox" data-layer="taxiway" checked onchange="toggleLayer('taxiway')"> <span class="dot taxiway-dot"></span> Taxiways <span id="countTaxiways" class="count">0</span></label>
+                        <label class="layer-toggle"><input type="checkbox" data-layer="terminal" checked onchange="toggleLayer('terminal')"> <span class="dot terminal-dot"></span> Terminal</label>
+                        <label class="layer-toggle"><input type="checkbox" data-layer="apron" checked onchange="toggleLayer('apron')"> <span class="dot apron-dot"></span> Apron</label>
+                    </div>
+
+                    <h3>Map Legend</h3>
+                    <div class="legend">
+                        <div class="legend-item"><span class="legend-color runway-color"></span> Runway</div>
+                        <div class="legend-item"><span class="legend-color taxiway-color"></span> Taxiway</div>
+                        <div class="legend-item"><span class="legend-color apron-color"></span> Apron</div>
+                        <div class="legend-item"><span class="legend-color terminal-color"></span> Terminal</div>
+                    </div>
+                    <p id="osmStatus" style="font-size:0.8rem;color:#888;margin-top:10px;">Loading airport layout...</p>
+                    <div class="airport-selector">
+                        <label>View another airport:</label>
+                        <select id="airportSelect" onchange="changeAirport(this.value)">
+                            <option value="HKG">Hong Kong (HKG)</option>
+                            <option value="JFK">New York JFK (JFK)</option>
+                            <option value="LHR">London Heathrow (LHR)</option>
+                            <option value="DXB">Dubai (DXB)</option>
+                            <option value="LAX">Los Angeles (LAX)</option>
+                            <option value="SIN">Singapore (SIN)</option>
+                            <option value="CDG">Paris CDG (CDG)</option>
+                            <option value="NRT">Tokyo Narita (NRT)</option>
+                            <option value="SYD">Sydney (SYD)</option>
+                            <option value="FRA">Frankfurt (FRA)</option>
+                            <option value="AMS">Amsterdam (AMS)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="airport.js"></script>
 </body>

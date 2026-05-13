@@ -1,141 +1,304 @@
-let map = null;
 let airportData = {};
-let drawnLayers = [];
+let map = null;
+let allMarkers = [];
+let layerGroups = {};
 
 async function loadData() {
     try {
-        const r = await fetch('data/airports.json');
-        airportData = await r.json();
+        const response = await fetch('data/airports.json');
+        airportData = await response.json();
         const params = new URLSearchParams(window.location.search);
         const icao = params.get('icao') || 'HKG';
-        initAirport(icao);
-    } catch (e) {
-        console.error("airports.json load failed:", e);
+        loadAirportMap(icao);
+    } catch (error) {
+        console.error("Failed to load airport data:", error);
     }
 }
 
-function initAirport(icao) {
+function loadAirportMap(icao) {
     const data = airportData[icao];
     if (!data) { alert("Airport not found!"); return; }
 
     document.getElementById('airportTitle').innerText = `${data.name} (${data.icao})`;
     document.getElementById('airportSubtitle').innerText = `${data.city}, ${data.country}`;
-    document.getElementById('navName').innerText = data.iata + ' Map';
     document.getElementById('infoIcao').innerText = data.icao;
     document.getElementById('infoIata').innerText = data.iata;
     document.getElementById('infoElev').innerText = data.elev;
-    document.getElementById('infoRunways').innerText = data.runways;
-    document.getElementById('airportSelect').value = icao;
+    document.getElementById('infoCoords').innerText = `${data.lat}°N, ${data.lon}°E`;
 
-    clearAll();
-
-    if (!map) {
-        map = L.map('map').setView([data.lat, data.lon], 13);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OSM'
-        }).addTo(map);
-    } else {
-        map.setView([data.lat, data.lon], 13);
+    const runwayInfo = document.getElementById('runwayInfo');
+    if (data.runways) {
+        const runways = data.runways.split(', ');
+        runwayInfo.innerHTML = runways.map(r => `
+            <div class="runway">
+                <span class="runway-name">${r.split(' ')[0]}</span>
+                <span class="runway-length">${r.split(' ').slice(1).join(' ')}</span>
+            </div>
+        `).join('');
     }
 
-    L.marker([data.lat, data.lon], {
-        icon: L.divIcon({ html: '✈️', iconSize: [30, 30], className: '' })
+    document.getElementById('airportSelect').value = icao;
+
+    if (map) {
+        map.setView([data.lat, data.lon], 13);
+        clearLayers();
+    } else {
+        map = L.map('map', { zoomControl: true }).setView([data.lat, data.lon], 13);
+        L.control.scale({ imperial: false, metric: true }).addTo(map);
+        const zoomDisplay = L.control({ position: 'bottomleft' });
+        zoomDisplay.onAdd = function() {
+            const div = L.DomUtil.create('div', 'zoom-display');
+            div.innerHTML = 'Zoom: <span id="zoomLevel">' + map.getZoom() + '</span>';
+            map.on('zoomend', function() {
+                document.getElementById('zoomLevel').innerText = map.getZoom();
+            });
+            return div;
+        };
+        zoomDisplay.addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    }
+
+    const airportIcon = L.divIcon({
+        html: '✈️', iconSize: [30, 30], className: 'airport-marker'
+    });
+
+    const marker = L.marker([data.lat, data.lon], { icon: airportIcon }).addTo(map);
+    marker.bindPopup(`<strong>${data.name}</strong><br>ICAO: ${data.icao} | IATA: ${data.iata}<br>Elevation: ${data.elev}`);
+    allMarkers.push(marker);
+
+    // *** TEST: Guaranteed visible label to verify labels work ***
+    L.marker([data.lat + 0.005, data.lon + 0.005], {
+        icon: L.divIcon({
+            html: '<span style="background:red;color:white;padding:5px 10px;font-size:16px;font-weight:bold;">TEST LABEL</span>',
+            iconSize: [100, 30], className: 'test-label'
+        })
     }).addTo(map);
 
-    document.getElementById('osmStatus').innerText = '⏳ Fetching airport layout...';
-    fetchOSM(data);
+    fetchAirportOSM(icao, data);
 }
 
-function clearAll() {
-    drawnLayers.forEach(l => map.removeLayer(l));
-    drawnLayers = [];
+function clearLayers() {
+    // Remove layer groups
+    Object.keys(layerGroups).forEach(k => {
+        if (map.hasLayer(layerGroups[k])) map.removeLayer(layerGroups[k]);
+    });
+    // Remove direct markers
+    allMarkers.forEach(m => map.removeLayer(m));
+    allMarkers = [];
+    // Remove all label markers from previous airport
+    const oldLabels = window._labelMarkers || [];
+    oldLabels.forEach(m => {
+        if (map.hasLayer(m)) map.removeLayer(m);
+    });
+    window._labelMarkers = [];
 }
 
-async function fetchOSM(data) {
+async function fetchAirportOSM(icao, data) {
     const d = 0.05;
     const query = `[out:json][timeout:15];
     (way["aeroway"~"runway|taxiway|apron|helipad|terminal|gate"](${data.lat-d},${data.lon-d},${data.lat+d},${data.lon+d}));
     out body; >; out skel qt;`;
     const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+    
+    document.getElementById('osmStatus').innerText = '⏳ Fetching OSM data...';
 
     try {
-        const r = await fetch(url);
-        const osm = await r.json();
-        renderOSM(osm.elements);
-    } catch (e) {
-        console.error("OSM fetch failed:", e);
-        document.getElementById('osmStatus').innerText = '⚠️ Failed to load OSM data';
+        const response = await fetch(url);
+        const osmData = await response.json();
+        const wayCount = (osmData.elements || []).filter(e => e.type === 'way').length;
+        document.getElementById('osmStatus').innerText = `⏳ Rendering ${wayCount} ways...`;
+        renderOSMData(osmData);
+    } catch (error) {
+        console.error("OSM fetch failed:", error);
+        document.getElementById('osmStatus').innerText = '⚠️ OSM fetch failed: ' + error.message;
     }
 }
 
-function renderOSM(elements) {
+function renderOSMData(osmData) {
+    const elements = osmData.elements;
     if (!elements) return;
 
     const nodes = {};
-    elements.forEach(el => { if (el.type === 'node') nodes[el.id] = [el.lat, el.lon]; });
+    elements.forEach(el => {
+        if (el.type === 'node') nodes[el.id] = [el.lat, el.lon];
+    });
 
-    let rwyCount = 0, twyCount = 0, labelCount = 0;
+    layerGroups = {
+        runway: L.layerGroup().addTo(map),
+        taxiway: L.layerGroup().addTo(map),
+        apron: L.layerGroup().addTo(map),
+        terminal: L.layerGroup().addTo(map)
+    };
+
+    const styles = {
+        runway:  { color: '#2c2c2c', weight: 8, opacity: 0.9 },
+        taxiway: { color: '#d4a017', weight: 3, opacity: 0.8 },
+        apron:   { color: '#666', weight: 1, fillColor: '#bbb', fillOpacity: 0.25 },
+        terminal: { color: '#004494', weight: 2, fillColor: '#0056b3', fillOpacity: 0.15 },
+        helipad: { color: '#ff4444', weight: 2, fillColor: '#ff4444', fillOpacity: 0.3 }
+    };
+
+    const allLabels = [];
 
     elements.forEach(el => {
         if (el.type !== 'way') return;
-        const a = el.tags && el.tags.aeroway;
-        if (!a) return;
+        const aeroway = el.tags && el.tags.aeroway;
+        if (!aeroway) return;
 
         const coords = el.nodes.map(id => nodes[id]).filter(c => c);
         if (coords.length < 2) return;
 
-        if (a === 'runway') {
-            const line = L.polyline(coords, { color: '#2c2c2c', weight: 8, opacity: 0.9 }).addTo(map);
-            drawnLayers.push(line);
-            rwyCount++;
+        const style = styles[aeroway] || { color: '#888', weight: 2 };
+        const ref = el.tags.ref || '';
+        const name = el.tags.name || '';
+        let popupText = aeroway.charAt(0).toUpperCase() + aeroway.slice(1);
+        if (ref) popupText = `${ref} - ${popupText}`;
 
-            const ref = el.tags.ref || '';
-            if (ref) {
-                const mid = coords[Math.floor(coords.length / 2)];
-                const label = L.marker(mid, {
+        if (aeroway === 'apron' || aeroway === 'terminal') {
+            L.polygon(coords, style).addTo(layerGroups[aeroway] || layerGroups.apron).bindPopup(popupText);
+        } else if (aeroway === 'runway') {
+            const line = L.polyline(coords, style).addTo(layerGroups.runway);
+            const labelText = ref || 'RWY';
+            line.bindPopup(`Runway ${labelText}${name ? '<br>' + name : ''}`);
+            const midIdx = Math.floor(coords.length / 2);
+            const mid = coords[midIdx];
+            if (mid) {
+                const m = L.marker(mid, {
                     icon: L.divIcon({
-                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:12px;">${ref}</span>`,
-                        iconSize: [50, 22], className: ''
+                        html: `<span style="background:#2c2c2c;color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;font-size:13px;white-space:nowrap;">${labelText}</span>`,
+                        iconSize: [50, 22], className: 'rwy-label'
                     })
-                }).addTo(map);
-                drawnLayers.push(label);
-                labelCount++;
+                });
+                m._labelType = 'runway';
+                allLabels.push(m);
             }
-        } else if (a === 'taxiway') {
-            const line = L.polyline(coords, { color: '#d4a017', weight: 3, opacity: 0.8 }).addTo(map);
-            drawnLayers.push(line);
-            twyCount++;
+        } else if (aeroway === 'taxiway') {
+            const line = L.polyline(coords, style).addTo(layerGroups.taxiway);
+            line.bindPopup(ref ? `Taxiway ${ref}` : 'Taxiway');
+            if (ref) {
+                const midIdx = Math.floor(coords.length / 2);
+                const mid = coords[midIdx];
+                if (mid) {
+                    const latlngs = coords.map(c => L.latLng(c[0], c[1]));
+                    let len = 0;
+                    for (let i = 1; i < latlngs.length; i++) len += latlngs[i-1].distanceTo(latlngs[i]);
+                    const m = L.marker(mid, {
+                        icon: L.divIcon({
+                            html: `<span style="background:#d4a017;color:#000;padding:2px 6px;border-radius:3px;font-weight:bold;font-size:12px;white-space:nowrap;border:1px solid #b8860b;">${ref}</span>`,
+                            iconSize: [30, 20], className: 'twy-label'
+                        })
+    });
 
-            const ref = el.tags.ref || '';
-            if (ref) {
-                const mid = coords[Math.floor(coords.length / 2)];
-                const label = L.marker(mid, {
-                    icon: L.divIcon({
-                        html: `<span style="background:#d4a017;color:#000;padding:1px 5px;border-radius:3px;font-weight:bold;font-size:11px;">${ref}</span>`,
-                        iconSize: [24, 18], className: ''
-                    })
-                }).addTo(map);
-                drawnLayers.push(label);
-                labelCount++;
+    // Add all labels to the map immediately
+    window._labelMarkers = allLabels;
+    allLabels.forEach(m => m.addTo(map));
+
+    const rCnt = allLabels.filter(m => m._labelType === 'runway').length;
+    const mCnt = allLabels.filter(m => m._labelType === 'major').length;
+    const iCnt = allLabels.filter(m => m._labelType === 'minor').length;
+    document.getElementById('osmStatus').innerText = `✅ RWY:${rCnt} M:${mCnt} m:${iCnt} (${allLabels.length} total)`;
+
+    // Center map
+    map.setView([data.lat, data.lon], 13, { animate: false });
+
+    // Apply zoom visibility
+    window._labelsOn = true;
+    applyLabelVisibility();
+
+    // Bind zoom changes
+    if (window._labelZoomHandler) map.off('zoomend', window._labelZoomHandler);
+    window._labelZoomHandler = function() { applyLabelVisibility(); };
+    map.on('zoomend', window._labelZoomHandler);
+                    m._labelType = len > 400 ? 'major' : 'minor';
+                    allLabels.push(m);
+                }
             }
-        } else if (a === 'apron') {
-            const poly = L.polygon(coords, { color: '#666', weight: 1, fillColor: '#bbb', fillOpacity: 0.25 }).addTo(map);
-            drawnLayers.push(poly);
-        } else if (a === 'terminal') {
-            const poly = L.polygon(coords, { color: '#004494', weight: 1, fillColor: '#0056b3', fillOpacity: 0.12 }).addTo(map);
-            drawnLayers.push(poly);
+        } else {
+            L.polyline(coords, style).addTo(map).bindPopup(popupText);
         }
     });
 
-    document.getElementById('osmStatus').innerText = 
-        `✅ Loaded — ${rwyCount} runways, ${twyCount} taxiways, ${labelCount} labels`;
+    // Create label markers from features
+    const labelMarkers = [];
+    labelFeatures.forEach(f => {
+        const marker = L.marker(f.latlng, {
+            icon: L.divIcon({
+                html: `<span style="background:${f.bg};color:${f.color};padding:2px 6px;border-radius:3px;font-weight:bold;font-size:12px;border:1px solid ${f.bg === '#d4a017' ? '#b8860b' : '#000'};">${f.text}</span>`,
+                iconSize: [60, 22],
+                iconAnchor: [30, 11],
+                className: 'label-marker'
+            })
+        });
+        marker._labelType = f.type;
+        marker._labelText = f.text;
+        labelMarkers.push(marker);
+    });
+
+    // Store and add to map
+    window._labelMarkers = labelMarkers;
+    labelMarkers.forEach(m => m.addTo(layerGroups.labels));
+
+    const rCnt = labelFeatures.filter(f => f.type === 'runway').length;
+    const mCnt = labelFeatures.filter(f => f.type === 'major').length;
+    const iCnt = labelFeatures.filter(f => f.type === 'minor').length;
+    document.getElementById('osmStatus').innerText = `✅ Loaded (RWY:${rCnt} M:${mCnt} m:${iCnt})`;
+
+    // Center map
+    map.setView([data.lat, data.lon], 13, { animate: false });
+
+    // Apply zoom-based visibility
+    window._labelsOn = true;
+    applyLabelVisibility();
+
+    // Bind zoom changes (use named handler to avoid removing other listeners)
+    if (window._labelZoomHandler) map.off('zoomend', window._labelZoomHandler);
+    window._labelZoomHandler = function() { applyLabelVisibility(); };
+    map.on('zoomend', window._labelZoomHandler);
+
+    updateLayerCounts();
+}
+
+function toggleLabels() {
+    window._labelsOn = !window._labelsOn;
+    const btn = document.getElementById('labelToggleBtn');
+    if (btn) btn.style.opacity = window._labelsOn ? '1' : '0.4';
+    applyLabelVisibility();
+}
+
+function applyLabelVisibility() {
+    const z = map.getZoom();
+    const markers = window._labelMarkers || [];
+    markers.forEach(m => {
+        if (!window._labelsOn) { map.removeLayer(m); return; }
+        if (m._labelType === 'runway' && z >= 12) { map.addLayer(m); }
+        else if (m._labelType === 'major' && z >= 13) { map.addLayer(m); }
+        else if (m._labelType === 'minor' && z >= 14) { map.addLayer(m); }
+        else { map.removeLayer(m); }
+    });
+    const btn = document.getElementById('labelToggleBtn');
+    const total = (window._labelMarkers || []).length;
+    if (btn) btn.innerHTML = `🏷️ Labels (${total})`;
+}
+
+function toggleLayer(layerName) {
+    const group = layerGroups[layerName];
+    if (!group) return;
+    if (map.hasLayer(group)) map.removeLayer(group);
+    else map.addLayer(group);
+}
+
+function updateLayerCounts() {
+    if (layerGroups.runway) document.getElementById('countRunways').innerText = layerGroups.runway.getLayers().length;
+    if (layerGroups.taxiway) document.getElementById('countTaxiways').innerText = layerGroups.taxiway.getLayers().length;
 }
 
 function changeAirport(icao) {
     const url = new URL(window.location);
     url.searchParams.set('icao', icao);
     window.history.pushState({}, '', url);
-    initAirport(icao);
+    loadAirportMap(icao);
 }
 
 loadData();

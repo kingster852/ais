@@ -1,0 +1,12 @@
+body { margin: 0; padding: 0; }
+#map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+.info-bar {
+    position: absolute; top: 10px; left: 50px; z-index: 1000;
+    background: rgba(255,255,255,0.95); padding: 8px 15px;
+    border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: flex; align-items: center; gap: 15px;
+    font-family: 'Segoe UI', sans-serif; font-size: 14px;
+}
+.info-bar span { font-weight: bold; }
+.info-bar select { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; }
+#status { color: #888; font-size: 12px; }

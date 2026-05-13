@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AIS Airport Map</title>
+    <link rel="stylesheet" href="map.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body>
+    <div id="map"></div>
+    <div class="info-bar">
+        <span id="title">Loading...</span>
+        <span id="status">⏳</span>
+        <select id="select" onchange="changeAirport(this.value)">
+            <option value="HKG">Hong Kong</option>
+            <option value="JFK">JFK</option>
+            <option value="LHR">Heathrow</option>
+            <option value="DXB">Dubai</option>
+            <option value="LAX">LA</option>
+            <option value="SIN">Singapore</option>
+            <option value="CDG">Paris CDG</option>
+            <option value="NRT">Narita</option>
+            <option value="SYD">Sydney</option>
+            <option value="FRA">Frankfurt</option>
+            <option value="AMS">Amsterdam</option>
+        </select>
+    </div>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="map.js"></script>
+</body>
+</html>
