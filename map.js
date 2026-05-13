@@ -58,8 +58,8 @@ function render(data, elements) {
         if (a === 'runway') {
             const line = L.polyline(coords, { color: '#2c2c2c', weight: 8 }).addTo(map);
             drawn.push(line); rw++;
-            const ref = el.tags.ref;
-            if (ref) {
+            const ref = el.tags.ref || 'RWY';
+            {
                 const mid = coords[Math.floor(coords.length/2)];
                 const lbl = L.marker(mid, {
                     icon: L.divIcon({
