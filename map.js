@@ -3,6 +3,17 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OSM'
 }).addTo(map);
 
+// *** BYPASS ALL FETCHES — test label first ***
+setTimeout(function() {
+    L.marker([22.3080, 113.9185], {
+        icon: L.divIcon({
+            html: '<b style="background:red;color:#fff;padding:5px 15px;font-size:18px;">TEST</b>',
+            iconSize: [80, 30], className: ''
+        })
+    }).addTo(map);
+    document.getElementById('status').innerText = '🔴 Test label should be visible';
+}, 2000);
+
 let airportData = {};
 let drawn = [];
 
